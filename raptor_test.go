@@ -44,8 +44,8 @@ func TestForwardRaptor(t *testing.T) {
 			from_stops = append(from_stops, GtfsStopStruct[string]{UniqueID: stop.Id})
 		}
 		/* 36st Astoria */
-		// if strings.HasPrefix(stop.Id, "R36") {
-		if strings.HasPrefix(stop.Id, "A41") {
+		if strings.HasPrefix(stop.Id, "R36") {
+			// if strings.HasPrefix(stop.Id, "A41") {
 			to_stops = append(to_stops, GtfsStopStruct[string]{UniqueID: stop.Id})
 		}
 	}
@@ -110,7 +110,11 @@ func TestForwardRaptor(t *testing.T) {
 
 	fmt.Printf("the first available journey departs from %s at %s arrives at %s by %s\n", journeys[0].FromUniqueStopID, FormatSecondsSinceMidnight(journeys[0].DepartureTimeInSeconds), journeys[0].ToUniqueStopID, FormatSecondsSinceMidnight(journeys[0].ArrivalTimeInSeconds))
 	for i, leg := range journeys[0].Legs {
-		fmt.Printf("the %dnth leg takes the following trip %s at %s from stop %s\n", i, leg.ViaTrip.UniqueTripID, FormatSecondsSinceMidnight(leg.DepartureTimeInSecondsFromUniqueStopID), leg.FromUniqueStopID)
+		if leg.ViaTrip != nil {
+			fmt.Printf("the %dnth leg takes the following trip %s at %s from stop %s to stop %s\n", i, leg.ViaTrip.UniqueTripID, FormatSecondsSinceMidnight(leg.DepartureTimeInSecondsFromUniqueStopID), leg.FromUniqueStopID, leg.ToUniqueStopID)
+		} else {
+			fmt.Printf("the %dnth transfers from %s to %s by walking\n", i, leg.FromUniqueStopID, leg.ToUniqueStopID)
+		}
 	}
 }
 
@@ -141,8 +145,8 @@ func TestReverseRaptor(t *testing.T) {
 			from_stops = append(from_stops, GtfsStopStruct[string]{UniqueID: stop.Id})
 		}
 		/* 36st Astoria */
-		// if strings.HasPrefix(stop.Id, "R36") {
-		if strings.HasPrefix(stop.Id, "A41") {
+		if strings.HasPrefix(stop.Id, "R36") {
+			// if strings.HasPrefix(stop.Id, "A41") {
 			to_stops = append(to_stops, GtfsStopStruct[string]{UniqueID: stop.Id})
 		}
 	}
@@ -205,6 +209,10 @@ func TestReverseRaptor(t *testing.T) {
 	})
 	fmt.Printf("the last possible journey departs from %s at %s arrives at %s by %s\n", journeys[0].FromUniqueStopID, FormatSecondsSinceMidnight(journeys[0].DepartureTimeInSeconds), journeys[0].ToUniqueStopID, FormatSecondsSinceMidnight(journeys[0].ArrivalTimeInSeconds))
 	for i, leg := range journeys[0].Legs {
-		fmt.Printf("the %dnth leg takes the following trip %s at %s from stop %s\n", i, leg.ViaTrip.UniqueTripID, FormatSecondsSinceMidnight(leg.DepartureTimeInSecondsFromUniqueStopID), leg.FromUniqueStopID)
+		if leg.ViaTrip != nil {
+			fmt.Printf("the %dnth leg takes the following trip %s at %s from stop %s to stop %s\n", i, leg.ViaTrip.UniqueTripID, FormatSecondsSinceMidnight(leg.DepartureTimeInSecondsFromUniqueStopID), leg.FromUniqueStopID, leg.ToUniqueStopID)
+		} else {
+			fmt.Printf("the %dnth transfers from %s to %s by walking\n", i, leg.FromUniqueStopID, leg.ToUniqueStopID)
+		}
 	}
 }
