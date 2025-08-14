@@ -1,0 +1,6 @@
+github.com/klauspost/compress v1.17.7 h1:ehO88t2UGzQK66LMdE8tibEd1ErmzZjNEqWkjLAKQQg=
+github.com/klauspost/compress v1.17.7/go.mod h1:Di0epgTjJY877eYKx5yC51cX2A2Vl2ibi7bDH9ttBbw=
+github.com/patrickbr/gtfsparser v0.0.0-20250811204933-790d4e1c69c1 h1:ei2LAhpj7frAPBzbjqTA9ICXi7H2KhBXlYzO0WwP8hI=
+github.com/patrickbr/gtfsparser v0.0.0-20250811204933-790d4e1c69c1/go.mod h1:WsjXLsxSQc+KfBJ7APQhk3yz+4DztzMYARQ+EfxKYSQ=
+github.com/valyala/fastjson v1.6.4 h1:uAUNq9Z6ymTgGhcm0UynUAB6tlbakBrz6CQFax3BXVQ=
+github.com/valyala/fastjson v1.6.4/go.mod h1:CLCAqky6SMuOcxStkYQvblddUtoRxhYMGLrsQns1aXY=
