@@ -89,10 +89,6 @@ func (b GtfsStopTimeStruct[T]) GetDepartureTimeInSeconds() int {
 	return b.DepartureTimeInSeconds
 }
 
-type RoundSegmentSpanTransferredFromUniqueStopID[ID UniqueGtfsIdLike] struct {
-	Value ID
-}
-
 /**
  * this represents a single span in a round segment
  * this contains a piece of the journey it took to get to the current segment
@@ -106,8 +102,6 @@ type RoundSegmentSpan[ID UniqueGtfsIdLike] struct {
 	StopSequenceInTrip     int
 	ArrivalTimeInSeconds   TimeInSecondsSinceStartOfDay
 	DepartureTimeInSeconds TimeInSecondsSinceStartOfDay
-	/* if this span was a transer span without a trip in between (ie walking or interchange) */
-	TransferredFromUniqueStopID *RoundSegmentSpanTransferredFromUniqueStopID[ID]
 }
 
 /**
@@ -144,6 +138,7 @@ type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType 
 type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
 	Input SimpleRaptorInput[ID, StopType, TransferType, StopTimeType]
 
+	FromStopsByUniqueStopId map[ID]ID
 	ToStopsByUniqueStopId   map[ID]ID
 	TransfersByUniqueStopId map[ID][]TransferType
 	StopTimesByUniqueStopId map[ID][]StopTimeType
@@ -159,6 +154,12 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 	to_stops_by_unique_stop_id := map[ID]ID{}
 	for _, stop := range input.ToStops {
 		to_stops_by_unique_stop_id[stop.GetUniqueID()] = stop.GetUniqueID()
+	}
+
+	/** create a map of from_stops by unique ID for easy lookup */
+	from_stops_by_unique_stop_id := map[ID]ID{}
+	for _, stop := range input.FromStops {
+		from_stops_by_unique_stop_id[stop.GetUniqueID()] = stop.GetUniqueID()
 	}
 
 	/** create a map of transfers from stop IDs for easy lookup */
@@ -186,6 +187,7 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 
 	return PreparedRaptorInput[ID, StopType, TransferType, StopTimeType]{
 		Input:                   input,
+		FromStopsByUniqueStopId: from_stops_by_unique_stop_id,
 		ToStopsByUniqueStopId:   to_stops_by_unique_stop_id,
 		TransfersByUniqueStopId: transfers_by_unique_stop_id,
 		StopTimesByUniqueStopId: stop_times_by_unique_stop_id,
@@ -194,15 +196,17 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 }
 
 /**
- * this is a basic raptor calculation using a depart at time in seconds
+ * below are the basic raptor implementations using either depart_at and arrive_by
+ * the logic is generally the same but they are reversed in their iteration due to the arrive by or depart at conditions
  * this assumes all the stop times are valid for the service on the requested date -- thus before calling stop times should be filtered
  * according to the gtfs calendar / services - this implementation only deals with Raptor
  * additionally stop times are expected to be ordered in ascending order by their stop sequence
  */
-func SimpleRaptor[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]](
+
+func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]](
 	input SimpleRaptorInput[ID, StopType, TransferType, StopTimeType],
 ) []RoundSegment[ID] {
-	prepared_input := PrepareRaptorInput[ID, StopType, TransferType, StopTimeType](input)
+	prepared_input := PrepareRaptorInput(input)
 
 	/* below is the start of the raptor based algorithm */
 	/* this map contains the earliest arrival time at each stop across rounds - keeping track of all the segments */
@@ -258,12 +262,11 @@ func SimpleRaptor[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsT
 						/* copy current segment spans + add a new span for how to get to this stop */
 						copy(updated_spans, current_segment_for_stop.Spans)
 						updated_spans[len(updated_spans)-1] = RoundSegmentSpan[ID]{
-							UniqueStopID:                stop_time_for_marked_stop.GetUniqueStopID(),
-							UniqueTripID:                stop_time_for_marked_stop.GetUniqueTripID(),
-							StopSequenceInTrip:          stop_time_for_marked_stop.GetStopSequence(),
-							ArrivalTimeInSeconds:        stop_time_for_marked_stop.GetArrivalTimeInSeconds(),
-							DepartureTimeInSeconds:      stop_time_for_marked_stop.GetDepartureTimeInSeconds(),
-							TransferredFromUniqueStopID: nil,
+							UniqueStopID:           stop_time_for_marked_stop.GetUniqueStopID(),
+							UniqueTripID:           stop_time_for_marked_stop.GetUniqueTripID(),
+							StopSequenceInTrip:     stop_time_for_marked_stop.GetStopSequence(),
+							ArrivalTimeInSeconds:   stop_time_for_marked_stop.GetArrivalTimeInSeconds(),
+							DepartureTimeInSeconds: stop_time_for_marked_stop.GetDepartureTimeInSeconds(),
 						}
 						earliest_arrival_time_segments_by_unique_stop_id[following_stop_time.GetUniqueStopID()] = RoundSegment[ID]{
 							UniqueStopID:         following_stop_time.GetUniqueStopID(),
@@ -326,4 +329,158 @@ func SimpleRaptor[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsT
 	}
 
 	return potential_journeys_found
+}
+
+func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]](
+	input SimpleRaptorInput[ID, StopType, TransferType, StopTimeType],
+) []RoundSegment[ID] {
+	/* for arrive by we will always want to iterate stop times in reverse - so let's reverse it once before preparing the input */
+	num_stop_times := len(input.StopTimes)
+	stop_times_in_reverse := make([]StopTimeType, num_stop_times)
+	for i, v := range input.StopTimes {
+		stop_times_in_reverse[num_stop_times-1-i] = v
+	}
+	prepared_input := PrepareRaptorInput(SimpleRaptorInput[ID, StopType, TransferType, StopTimeType]{
+		FromStops:        input.FromStops,
+		ToStops:          input.ToStops,
+		Transfers:        input.Transfers,
+		Mode:             input.Mode,
+		DateOfService:    input.DateOfService,
+		TimeInSeconds:    input.TimeInSeconds,
+		MaximumTransfers: input.MaximumTransfers,
+		StopTimes:        stop_times_in_reverse,
+	})
+
+	/* below is the start of the raptor based algorithm */
+	/* this map contains the latest possible arrival time at each stop across rounds (nearest to the arrive by time) - keeping track of all the segments */
+	latest_arrival_time_segments_by_unique_stop_id := map[ID]RoundSegment[ID]{}
+	/* this is the result slice which contains all the potential journeys (meaning segments which reach the end destination) */
+	potential_journeys_found := []RoundSegment[ID]{}
+
+	/* to start we need to mark which stops we are going to check during the current round - at the start this will only be the destinations stops */
+	/* this will be replaced between rounds because we will be checking the next set of transferred to stops */
+	stops_marked_for_round := make(map[ID]ID, len(input.ToStops))
+	for _, stop := range input.ToStops {
+		stops_marked_for_round[stop.GetUniqueID()] = stop.GetUniqueID()
+	}
+
+	/* we will also initialize the initial segments for the to_stops -> essentially saying we have not been able to arrive yet */
+	for _, to_stop := range input.ToStops {
+		latest_arrival_time_segments_by_unique_stop_id[to_stop.GetUniqueID()] = RoundSegment[ID]{
+			UniqueStopID:         to_stop.GetUniqueID(),
+			ArrivalTimeInSeconds: input.TimeInSeconds,
+			/* we arrived here "as-is" so no spans yet */
+			Spans: []RoundSegmentSpan[ID]{},
+		}
+	}
+
+	/* now we can start the rounds up until N transfers */
+	for range input.MaximumTransfers {
+		/* this will be the set of next stops to check for the next round */
+		stops_marked_for_next_round := map[ID]ID{}
+		/* in each round we will check all marked stops for the trips we could take - we will do this by going through the stop times in  reverse */
+		for _, marked_stop_unique_id := range stops_marked_for_round {
+			/* this should always exist because any marked stop should have been added to the segment list */
+			current_segment_for_stop := latest_arrival_time_segments_by_unique_stop_id[marked_stop_unique_id]
+			stop_times_for_marked_stop := prepared_input.StopTimesByUniqueStopId[marked_stop_unique_id]
+			/* we will go through the stop times and find the latest arrivals which are still before my expected can make based on our current earliest arrival time at the  "marked_stop" */
+			for _, stop_time_for_marked_stop := range stop_times_for_marked_stop {
+				if stop_time_for_marked_stop.GetArrivalTimeInSeconds() > current_segment_for_stop.ArrivalTimeInSeconds {
+					/* if the arrival time of this stop time happens after the current segment arrival time then we are too late */
+					continue
+				}
+				/*
+				 * if we CAN make it we will want to look up the stop times before the current one in the trip.
+				 * we're essentially just going down the line in reverse and storing each stop time if the arrival time is later than the currently stored one
+				 * (meaning I could get to this stop later than initially expected)
+				 */
+				stop_times_for_unique_trip_id := prepared_input.StopTimesByUniqueTripId[stop_time_for_marked_stop.GetUniqueTripID()]
+				/* to get these we want to reverse the stop sequence and skip one to exclude my current stop which I already checked */
+				stop_times_for_unique_trip_id_after_current_stop := stop_times_for_unique_trip_id[len(stop_times_for_unique_trip_id)-stop_time_for_marked_stop.GetStopSequence()+1:]
+				/* the stop times are expected to be in order of sequence descending */
+			preceeding_stop_times_loop:
+				for _, preceeding_stop_time := range stop_times_for_unique_trip_id_after_current_stop {
+					existing_segment, has_existing_segment := latest_arrival_time_segments_by_unique_stop_id[preceeding_stop_time.GetUniqueStopID()]
+					/* if this stop was not arrived at yet OR if this arrival is after the recorded arrival */
+					if !has_existing_segment || preceeding_stop_time.GetArrivalTimeInSeconds() > existing_segment.ArrivalTimeInSeconds {
+						/* copy current segment spans + add a new span for how to get to this stop - we'll be adding them at the start to make sure it's chronological */
+						updated_spans := append([]RoundSegmentSpan[ID]{
+							{
+								UniqueStopID:           stop_time_for_marked_stop.GetUniqueStopID(),
+								UniqueTripID:           stop_time_for_marked_stop.GetUniqueTripID(),
+								StopSequenceInTrip:     stop_time_for_marked_stop.GetStopSequence(),
+								ArrivalTimeInSeconds:   stop_time_for_marked_stop.GetArrivalTimeInSeconds(),
+								DepartureTimeInSeconds: stop_time_for_marked_stop.GetDepartureTimeInSeconds(),
+							},
+						}, current_segment_for_stop.Spans...)
+						latest_arrival_time_segments_by_unique_stop_id[preceeding_stop_time.GetUniqueStopID()] = RoundSegment[ID]{
+							UniqueStopID:         preceeding_stop_time.GetUniqueStopID(),
+							ArrivalTimeInSeconds: preceeding_stop_time.GetArrivalTimeInSeconds(),
+							Spans:                updated_spans,
+						}
+					}
+					/* next we can mark this stop to check in the next round AND add any potential transfers from this stop to mark */
+					stops_marked_for_next_round[preceeding_stop_time.GetUniqueStopID()] = preceeding_stop_time.GetUniqueStopID()
+					potential_transfers_for_stop := prepared_input.TransfersByUniqueStopId[preceeding_stop_time.GetUniqueStopID()]
+					for _, transfer_stop := range potential_transfers_for_stop {
+						stops_marked_for_next_round[transfer_stop.GetToUniqueStopID()] = transfer_stop.GetToUniqueStopID()
+						/* for each transferrable station we'll also add a latest arrival segment which is the current arrival time - the minimum transfer time (if the arrival is later than the previously recorded one) */
+						arrival_time_at_transfer_stop := preceeding_stop_time.GetArrivalTimeInSeconds() - transfer_stop.GetMinimumTransferTimeInSeconds()
+						existing_transfer_segment, has_existing_transfer_segment := latest_arrival_time_segments_by_unique_stop_id[transfer_stop.GetToUniqueStopID()]
+						if !has_existing_transfer_segment || arrival_time_at_transfer_stop > existing_transfer_segment.ArrivalTimeInSeconds {
+							/* copy current segment spans from the original arrival station + add a new one for the transfer itself */
+							updated_spans := append([]RoundSegmentSpan[ID]{
+								{
+									UniqueStopID:           preceeding_stop_time.GetUniqueStopID(),
+									UniqueTripID:           preceeding_stop_time.GetUniqueTripID(),
+									StopSequenceInTrip:     preceeding_stop_time.GetStopSequence(),
+									ArrivalTimeInSeconds:   preceeding_stop_time.GetArrivalTimeInSeconds(),
+									DepartureTimeInSeconds: preceeding_stop_time.GetDepartureTimeInSeconds(),
+								},
+							}, existing_segment.Spans...)
+							latest_arrival_time_segments_by_unique_stop_id[transfer_stop.GetToUniqueStopID()] = RoundSegment[ID]{
+								UniqueStopID:         transfer_stop.GetToUniqueStopID(),
+								ArrivalTimeInSeconds: arrival_time_at_transfer_stop,
+								Spans:                updated_spans,
+							}
+						}
+					}
+					/* lastly we can check if this stop is actually one of our origin stops - in which case the segment is corresponding to a complete journe7 */
+					stops_which_could_be_origin := []ID{preceeding_stop_time.GetUniqueStopID()}
+					for _, transfer_stop := range potential_transfers_for_stop {
+						stops_which_could_be_origin = append(stops_which_could_be_origin, transfer_stop.GetToUniqueStopID())
+					}
+
+					for _, potential_origin_stop := range stops_which_could_be_origin {
+						if _, is_origin_stop := prepared_input.ToStopsByUniqueStopId[potential_origin_stop]; is_origin_stop {
+							segment := latest_arrival_time_segments_by_unique_stop_id[potential_origin_stop]
+							segment_spans := make([]RoundSegmentSpan[ID], len(segment.Spans))
+							copy(segment_spans, segment.Spans)
+							potential_journeys_found = append(potential_journeys_found, RoundSegment[ID]{
+								UniqueStopID:         segment.UniqueStopID,
+								ArrivalTimeInSeconds: segment.ArrivalTimeInSeconds,
+								Spans:                segment_spans,
+							})
+
+							/* this also means we can stop this loop */
+							break preceeding_stop_times_loop
+						}
+					}
+				}
+			}
+		}
+		/* replace stops marked map */
+		stops_marked_for_round = stops_marked_for_next_round
+	}
+
+	return potential_journeys_found
+}
+
+func SimpleRaptor[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]](
+	input SimpleRaptorInput[ID, StopType, TransferType, StopTimeType],
+) []RoundSegment[ID] {
+	if input.Mode == RaptorModeDepartAt {
+		return SimpleRaptorDepartAt(input)
+	}
+	return SimpleRaptorArriveBy(input)
 }
