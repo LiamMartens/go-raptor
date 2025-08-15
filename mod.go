@@ -1,5 +1,10 @@
 package go_raptor
 
+import (
+	"fmt"
+	"strings"
+)
+
 /**
  * whenever this type is used we are referring to a globally unique identifier for the object
  * this will likely differ from the ingested GTFS IDs because they are only guaranteed to be unique within a feed
@@ -160,6 +165,18 @@ type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTyp
 	StopTimesByUniqueTripId map[ID][]StopTimeType
 }
 
+func (j Journey[ID]) GetFingerPrint() string {
+	parts := []string{}
+	for _, leg := range j.Legs {
+		tripID := ""
+		if leg.ViaTrip != nil {
+			tripID = fmt.Sprintf("%v", leg.ViaTrip.UniqueTripID)
+		}
+		parts = append(parts, fmt.Sprintf("%v|%v|%v", leg.FromUniqueStopID, tripID, leg.ToUniqueStopID))
+	}
+	return strings.Join(parts, "->")
+}
+
 func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]](
 	input SimpleRaptorInput[ID, StopType, TransferType, StopTimeType],
 ) PreparedRaptorInput[ID, StopType, TransferType, StopTimeType] {
@@ -228,6 +245,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 	earliest_arrival_time_segments_by_unique_stop_id := map[ID]RoundSegment[ID]{}
 	/* this is the result slice which contains all the potential journeys (meaning segments which reach the end destination) */
 	potential_journeys_found := []Journey[ID]{}
+	potential_journey_fingerprints := map[string]bool{}
 
 	/* we will also initialize the initial segments for the from_stops -> essentially saying we have arrived at said stops at the depart_at time */
 	for _, from_stop := range input.FromStops {
@@ -321,7 +339,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 						}
 					}
 					/* lastly we can check if this stop is actually one of our destination stops - in which case the segment is corresponding to a complete journe7 */
-					if _, is_destination_stop := prepared_input.ToStopsByUniqueStopId[following_stop_time.GetUniqueStopID()]; is_destination_stop && is_improvement_to_existing_arrival_time {
+					if _, is_destination_stop := prepared_input.ToStopsByUniqueStopId[following_stop_time.GetUniqueStopID()]; is_destination_stop {
 						segment := earliest_arrival_time_segments_by_unique_stop_id[following_stop_time.GetUniqueStopID()]
 						if len(segment.Spans) > 0 {
 							/* if the spans are 0 it means we were already at our stop in the first place */
@@ -337,7 +355,11 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 								Legs:                   segment_spans,
 							}
 
-							potential_journeys_found = append(potential_journeys_found, journey)
+							journey_fingerprint := journey.GetFingerPrint()
+							if _, has_same_trip := potential_journey_fingerprints[journey_fingerprint]; !has_same_trip {
+								potential_journeys_found = append(potential_journeys_found, journey)
+								potential_journey_fingerprints[journey_fingerprint] = true
+							}
 
 							/* this also means we can stop this loop */
 							break following_stop_times_loop
@@ -378,6 +400,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 	latest_arrival_time_segments_by_unique_stop_id := map[ID]RoundSegment[ID]{}
 	/* this is the result slice which contains all the potential journeys (meaning segments which reach the end destination) */
 	potential_journeys_found := []Journey[ID]{}
+	potential_journey_fingerprints := map[string]bool{}
 
 	/* to start we need to mark which stops we are going to check during the current round - at the start this will only be the destinations stops */
 	/* this will be replaced between rounds because we will be checking the next set of transferred to stops */
@@ -474,7 +497,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 						}
 					}
 					/* lastly we can check if this stop is actually one of our origin stops - in which case the segment is corresponding to a complete journe7 */
-					if _, is_origin_stop := prepared_input.FromStopsByUniqueStopId[preceeding_stop_time.GetUniqueStopID()]; is_origin_stop && is_improvement_to_existing_arrival_time {
+					if _, is_origin_stop := prepared_input.FromStopsByUniqueStopId[preceeding_stop_time.GetUniqueStopID()]; is_origin_stop {
 						segment := latest_arrival_time_segments_by_unique_stop_id[preceeding_stop_time.GetUniqueStopID()]
 						if len(segment.Spans) > 0 {
 							/* if the spans are 0 it means we were already at our stop in the first place */
@@ -482,13 +505,19 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 							copy(segment_spans, segment.Spans)
 							first_segment_span := segment_spans[0]
 							last_segment_span := segment_spans[len(segment_spans)-1]
-							potential_journeys_found = append(potential_journeys_found, Journey[ID]{
+							journey := Journey[ID]{
 								FromUniqueStopID:       first_segment_span.FromUniqueStopID,
 								ToUniqueStopID:         last_segment_span.ToUniqueStopID,
 								DepartureTimeInSeconds: first_segment_span.DepartureTimeInSecondsFromUniqueStopID,
 								ArrivalTimeInSeconds:   last_segment_span.ArrivalTimeInSecondsToUniqueStopID,
 								Legs:                   segment_spans,
-							})
+							}
+
+							journey_fingerprint := journey.GetFingerPrint()
+							if _, has_same_trip := potential_journey_fingerprints[journey_fingerprint]; !has_same_trip {
+								potential_journeys_found = append(potential_journeys_found, journey)
+								potential_journey_fingerprints[journey_fingerprint] = true
+							}
 
 							/* this also means we can stop this loop */
 							break preceeding_stop_times_loop

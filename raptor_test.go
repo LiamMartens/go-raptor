@@ -22,10 +22,6 @@ func TestForwardRaptor(t *testing.T) {
 
 	feed.Parse("./gtfs_subway.zip")
 
-	for _, service := range feed.Services {
-		fmt.Printf("%#v\n", service.GetFirstActiveDate().Day())
-	}
-
 	all_stops_by_id := map[string]*gtfs.Stop{}
 	parent_child_stations_by_id := map[string][]string{}
 
