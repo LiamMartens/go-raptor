@@ -229,13 +229,6 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 	/* this is the result slice which contains all the potential journeys (meaning segments which reach the end destination) */
 	potential_journeys_found := []Journey[ID]{}
 
-	/* to start we need to mark which stops we are going to check during the current round - at the start this will only be the from stops */
-	/* this will be replaced between rounds because we will be checking the next set of transferred to stops */
-	stops_marked_for_round := make(map[ID]ID, len(input.FromStops))
-	for _, stop := range input.FromStops {
-		stops_marked_for_round[stop.GetUniqueID()] = stop.GetUniqueID()
-	}
-
 	/* we will also initialize the initial segments for the from_stops -> essentially saying we have arrived at said stops at the depart_at time */
 	for _, from_stop := range input.FromStops {
 		earliest_arrival_time_segments_by_unique_stop_id[from_stop.GetUniqueID()] = RoundSegment[ID]{
@@ -244,6 +237,13 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 			/* we arrived here "as-is" so no spans yet */
 			Spans: []RoundSegmentSpan[ID]{},
 		}
+	}
+
+	/* to start we need to mark which stops we are going to check during the current round - at the start this will only be the from stops */
+	/* this will be replaced between rounds because we will be checking the next set of transferred to stops */
+	stops_marked_for_round := make(map[ID]ID, len(input.FromStops))
+	for _, stop := range input.FromStops {
+		stops_marked_for_round[stop.GetUniqueID()] = stop.GetUniqueID()
 	}
 
 	/* now we can start the rounds up until N transfers */
@@ -271,8 +271,9 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 			following_stop_times_loop:
 				for _, following_stop_time := range stop_times_for_unique_trip_id_after_current_stop {
 					existing_segment, has_existing_segment := earliest_arrival_time_segments_by_unique_stop_id[following_stop_time.GetUniqueStopID()]
+					is_improvement_to_existing_arrival_time := !has_existing_segment || existing_segment.ArrivalTimeInSeconds > following_stop_time.GetArrivalTimeInSeconds()
 					/* if this stop was not arrived at yet OR if this arrival is before the recorded arrival */
-					if !has_existing_segment || existing_segment.ArrivalTimeInSeconds > following_stop_time.GetArrivalTimeInSeconds() {
+					if is_improvement_to_existing_arrival_time {
 						updated_spans := make([]RoundSegmentSpan[ID], len(current_segment_for_stop.Spans)+1)
 						/* copy current segment spans + add a new span for how to get to this stop */
 						copy(updated_spans, current_segment_for_stop.Spans)
@@ -320,25 +321,23 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 						}
 					}
 					/* lastly we can check if this stop is actually one of our destination stops - in which case the segment is corresponding to a complete journe7 */
-					stops_which_could_be_destination := []ID{following_stop_time.GetUniqueStopID()}
-					for _, transfer_stop := range potential_transfers_for_stop {
-						stops_which_could_be_destination = append(stops_which_could_be_destination, transfer_stop.GetToUniqueStopID())
-					}
-
-					for _, potential_destination_stop := range stops_which_could_be_destination {
-						if _, is_destination_stop := prepared_input.ToStopsByUniqueStopId[potential_destination_stop]; is_destination_stop {
-							segment := earliest_arrival_time_segments_by_unique_stop_id[potential_destination_stop]
+					if _, is_destination_stop := prepared_input.ToStopsByUniqueStopId[following_stop_time.GetUniqueStopID()]; is_destination_stop && is_improvement_to_existing_arrival_time {
+						segment := earliest_arrival_time_segments_by_unique_stop_id[following_stop_time.GetUniqueStopID()]
+						if len(segment.Spans) > 0 {
+							/* if the spans are 0 it means we were already at our stop in the first place */
 							segment_spans := make([]RoundSegmentSpan[ID], len(segment.Spans))
 							copy(segment_spans, segment.Spans)
 							first_segment_span := segment_spans[0]
 							last_segment_span := segment_spans[len(segment_spans)-1]
-							potential_journeys_found = append(potential_journeys_found, Journey[ID]{
+							journey := Journey[ID]{
 								FromUniqueStopID:       first_segment_span.FromUniqueStopID,
 								ToUniqueStopID:         last_segment_span.ToUniqueStopID,
 								DepartureTimeInSeconds: first_segment_span.DepartureTimeInSecondsFromUniqueStopID,
 								ArrivalTimeInSeconds:   last_segment_span.ArrivalTimeInSecondsToUniqueStopID,
 								Legs:                   segment_spans,
-							})
+							}
+
+							potential_journeys_found = append(potential_journeys_found, journey)
 
 							/* this also means we can stop this loop */
 							break following_stop_times_loop
@@ -424,8 +423,9 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 			preceeding_stop_times_loop:
 				for _, preceeding_stop_time := range stop_times_for_unique_trip_id_after_current_stop {
 					existing_segment, has_existing_segment := latest_arrival_time_segments_by_unique_stop_id[preceeding_stop_time.GetUniqueStopID()]
+					is_improvement_to_existing_arrival_time := !has_existing_segment || preceeding_stop_time.GetArrivalTimeInSeconds() > existing_segment.ArrivalTimeInSeconds
 					/* if this stop was not arrived at yet OR if this arrival is after the recorded arrival */
-					if !has_existing_segment || preceeding_stop_time.GetArrivalTimeInSeconds() > existing_segment.ArrivalTimeInSeconds {
+					if is_improvement_to_existing_arrival_time {
 						/* we'll want to update the segment spans of the current marked stop NOT the preceeding stop since we don't know yet how we can arrive at the preceeding */
 						/* however we do now now how we could arrive at the current marked stop which is through this stop time */
 						updated_spans := append([]RoundSegmentSpan[ID]{
@@ -474,14 +474,10 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 						}
 					}
 					/* lastly we can check if this stop is actually one of our origin stops - in which case the segment is corresponding to a complete journe7 */
-					stops_which_could_be_origin := []ID{preceeding_stop_time.GetUniqueStopID()}
-					for _, transfer_stop := range potential_transfers_for_stop {
-						stops_which_could_be_origin = append(stops_which_could_be_origin, transfer_stop.GetToUniqueStopID())
-					}
-
-					for _, potential_origin_stop := range stops_which_could_be_origin {
-						if _, is_origin_stop := prepared_input.FromStopsByUniqueStopId[potential_origin_stop]; is_origin_stop {
-							segment := latest_arrival_time_segments_by_unique_stop_id[potential_origin_stop]
+					if _, is_origin_stop := prepared_input.FromStopsByUniqueStopId[preceeding_stop_time.GetUniqueStopID()]; is_origin_stop && is_improvement_to_existing_arrival_time {
+						segment := latest_arrival_time_segments_by_unique_stop_id[preceeding_stop_time.GetUniqueStopID()]
+						if len(segment.Spans) > 0 {
+							/* if the spans are 0 it means we were already at our stop in the first place */
 							segment_spans := make([]RoundSegmentSpan[ID], len(segment.Spans))
 							copy(segment_spans, segment.Spans)
 							first_segment_span := segment_spans[0]

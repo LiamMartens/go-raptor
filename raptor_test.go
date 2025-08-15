@@ -44,8 +44,7 @@ func TestForwardRaptor(t *testing.T) {
 			from_stops = append(from_stops, GtfsStopStruct[string]{UniqueID: stop.Id})
 		}
 		/* 36st Astoria */
-		if strings.HasPrefix(stop.Id, "R36") {
-			// if strings.HasPrefix(stop.Id, "A41") {
+		if strings.HasPrefix(stop.Id, "A44") {
 			to_stops = append(to_stops, GtfsStopStruct[string]{UniqueID: stop.Id})
 		}
 	}
@@ -98,7 +97,7 @@ func TestForwardRaptor(t *testing.T) {
 			Mode:             RaptorModeDepartAt,
 			DateOfService:    "20250814",
 			TimeInSeconds:    9 * 3600,
-			MaximumTransfers: 4,
+			MaximumTransfers: 1,
 		},
 	)
 
