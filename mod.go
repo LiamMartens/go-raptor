@@ -311,6 +311,8 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 							ArrivalTimeInSeconds: following_stop_time.GetArrivalTimeInSeconds(),
 							Spans:                updated_spans,
 						}
+						/* update existing segment in place for later */
+						existing_segment = earliest_arrival_time_segments_by_unique_stop_id[following_stop_time.GetUniqueStopID()]
 					}
 					/* next we can mark this stop to check in the next round AND add any potential transfers from this stop to mark */
 					stops_marked_for_next_round[following_stop_time.GetUniqueStopID()] = following_stop_time.GetUniqueStopID()
@@ -469,6 +471,8 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 							ArrivalTimeInSeconds: preceeding_stop_time.GetArrivalTimeInSeconds(),
 							Spans:                updated_spans,
 						}
+						/* update existing segment in place for later */
+						existing_segment = latest_arrival_time_segments_by_unique_stop_id[preceeding_stop_time.GetUniqueStopID()]
 					}
 					/* next we can mark this stop to check in the next round AND add any potential transfers from this stop to mark */
 					stops_marked_for_next_round[preceeding_stop_time.GetUniqueStopID()] = preceeding_stop_time.GetUniqueStopID()
