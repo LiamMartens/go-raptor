@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/patrickbr/gtfsparser"
 	"github.com/patrickbr/gtfsparser/gtfs"
@@ -43,8 +44,8 @@ func TestForwardRaptor(t *testing.T) {
 		if strings.HasPrefix(stop.Id, "A40") {
 			from_stops = append(from_stops, GtfsStopStruct[string]{UniqueID: stop.Id})
 		}
-		/* 36st Astoria */
-		if strings.HasPrefix(stop.Id, "A44") {
+		/* Lincoln Center */
+		if strings.HasPrefix(stop.Id, "124") {
 			to_stops = append(to_stops, GtfsStopStruct[string]{UniqueID: stop.Id})
 		}
 	}
@@ -88,6 +89,7 @@ func TestForwardRaptor(t *testing.T) {
 		}
 	}
 
+	raptor_start_time := time.Now()
 	journeys := SimpleRaptor(
 		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
 			FromStops:        from_stops,
@@ -100,8 +102,8 @@ func TestForwardRaptor(t *testing.T) {
 			MaximumTransfers: 4,
 		},
 	)
+	fmt.Printf("found %d journeys in time %v\n", len(journeys), time.Since(raptor_start_time))
 
-	fmt.Printf("found %d journeys\n", len(journeys))
 	sort.Slice(journeys, func(i, j int) bool {
 		/* return true if I < J */
 		return journeys[i].ArrivalTimeInSeconds < journeys[j].ArrivalTimeInSeconds
