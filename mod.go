@@ -15,7 +15,7 @@ type UniqueGtfsIdLike interface {
 }
 
 /** we will usually want to operate on times in seconds since the start of the day - this makes for easy comparisons */
-type TimeInSecondsSinceStartOfDay = int
+type TimestampInSeconds = int64
 
 type GtfsStop[ID UniqueGtfsIdLike] interface {
 	GetUniqueID() ID
@@ -33,8 +33,8 @@ type GtfsStopTime[ID UniqueGtfsIdLike] interface {
 	/** this is the globally unique trip id for this stop time entry */
 	GetUniqueTripID() ID
 	GetStopSequence() int
-	GetArrivalTimeInSeconds() TimeInSecondsSinceStartOfDay
-	GetDepartureTimeInSeconds() TimeInSecondsSinceStartOfDay
+	GetArrivalTimeInSeconds() TimestampInSeconds
+	GetDepartureTimeInSeconds() TimestampInSeconds
 }
 
 type GtfsStopStruct[ID UniqueGtfsIdLike] struct {
@@ -54,8 +54,8 @@ type GtfsStopTimeStruct[ID UniqueGtfsIdLike] struct {
 	UniqueStopID           ID
 	UniqueTripID           ID
 	StopSequence           int
-	ArrivalTimeInSeconds   int
-	DepartureTimeInSeconds int
+	ArrivalTimeInSeconds   TimestampInSeconds
+	DepartureTimeInSeconds TimestampInSeconds
 }
 
 func (b GtfsStopStruct[T]) GetUniqueID() T {
@@ -86,11 +86,11 @@ func (b GtfsStopTimeStruct[T]) GetStopSequence() int {
 	return b.StopSequence
 }
 
-func (b GtfsStopTimeStruct[T]) GetArrivalTimeInSeconds() int {
+func (b GtfsStopTimeStruct[T]) GetArrivalTimeInSeconds() TimestampInSeconds {
 	return b.ArrivalTimeInSeconds
 }
 
-func (b GtfsStopTimeStruct[T]) GetDepartureTimeInSeconds() int {
+func (b GtfsStopTimeStruct[T]) GetDepartureTimeInSeconds() TimestampInSeconds {
 	return b.DepartureTimeInSeconds
 }
 
@@ -112,8 +112,8 @@ type RoundSegmentSpan[ID UniqueGtfsIdLike] struct {
 	ToUniqueStopID   ID
 	/* could be nil if walking transfer */
 	ViaTrip                                *ViaTrip[ID]
-	ArrivalTimeInSecondsToUniqueStopID     TimeInSecondsSinceStartOfDay
-	DepartureTimeInSecondsFromUniqueStopID TimeInSecondsSinceStartOfDay
+	ArrivalTimeInSecondsToUniqueStopID     TimestampInSeconds
+	DepartureTimeInSecondsFromUniqueStopID TimestampInSeconds
 }
 
 /**
@@ -123,15 +123,15 @@ type RoundSegmentSpan[ID UniqueGtfsIdLike] struct {
  * */
 type RoundSegment[ID UniqueGtfsIdLike] struct {
 	UniqueStopID         ID
-	ArrivalTimeInSeconds TimeInSecondsSinceStartOfDay
+	ArrivalTimeInSeconds TimestampInSeconds
 	Spans                []RoundSegmentSpan[ID]
 }
 
 type Journey[ID UniqueGtfsIdLike] struct {
 	ToUniqueStopID         ID
 	FromUniqueStopID       ID
-	DepartureTimeInSeconds TimeInSecondsSinceStartOfDay
-	ArrivalTimeInSeconds   TimeInSecondsSinceStartOfDay
+	DepartureTimeInSeconds TimestampInSeconds
+	ArrivalTimeInSeconds   TimestampInSeconds
 	Legs                   []RoundSegmentSpan[ID]
 }
 
@@ -151,7 +151,7 @@ type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType 
 	/* expected YYYYMMDD */
 	DateOfService string
 	/* will be used for either depart_at mode or arrive_by mode */
-	TimeInSeconds    TimeInSecondsSinceStartOfDay
+	TimeInSeconds    TimestampInSeconds
 	MaximumTransfers int
 }
 
@@ -336,7 +336,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					for _, transfer_stop := range potential_transfers_for_stop {
 						stops_marked_for_next_round[transfer_stop.GetToUniqueStopID()] = transfer_stop.GetToUniqueStopID()
 						/* for each transferrable station we'll also add an earliest arrival segment which is the current arrival time + the minimum transfer time (if the arrival is earlier than the previously recorded one) */
-						arrival_time_at_transfer_stop := following_stop_time.GetArrivalTimeInSeconds() + transfer_stop.GetMinimumTransferTimeInSeconds()
+						arrival_time_at_transfer_stop := following_stop_time.GetArrivalTimeInSeconds() + int64(transfer_stop.GetMinimumTransferTimeInSeconds())
 						existing_transfer_segment, has_existing_transfer_segment := earliest_arrival_time_segments_by_unique_stop_id[transfer_stop.GetToUniqueStopID()]
 						if !has_existing_transfer_segment || existing_transfer_segment.ArrivalTimeInSeconds > arrival_time_at_transfer_stop {
 							/* copy current segment spans from the original arrival station + add a new one for the transfer itself */
@@ -509,7 +509,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					for _, transfer_stop := range potential_transfers_for_stop {
 						stops_marked_for_next_round[transfer_stop.GetToUniqueStopID()] = transfer_stop.GetToUniqueStopID()
 						/* for each transferrable station we'll also add a latest arrival segment which is the current arrival time - the minimum transfer time (if the arrival is later than the previously recorded one) */
-						departure_time_from_transfer_stop := preceeding_stop_time.GetArrivalTimeInSeconds() - transfer_stop.GetMinimumTransferTimeInSeconds()
+						departure_time_from_transfer_stop := preceeding_stop_time.GetArrivalTimeInSeconds() - int64(transfer_stop.GetMinimumTransferTimeInSeconds())
 						existing_transfer_segment, has_existing_transfer_segment := latest_arrival_time_segments_by_unique_stop_id[transfer_stop.GetToUniqueStopID()]
 						if !has_existing_transfer_segment || departure_time_from_transfer_stop > existing_transfer_segment.ArrivalTimeInSeconds {
 							/* copy current segment spans from the original arrival station + add a new one for the transfer itself */

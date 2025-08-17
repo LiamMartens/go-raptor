@@ -11,7 +11,7 @@ import (
 	"github.com/patrickbr/gtfsparser/gtfs"
 )
 
-func FormatSecondsSinceMidnight(secs int) string {
+func FormatSecondsSinceMidnight(secs int64) string {
 	hours := secs / 3600
 	minutes := (secs % 3600) / 60
 	seconds := secs % 60
@@ -81,8 +81,8 @@ func TestForwardRaptor(t *testing.T) {
 				stop_times = append(stop_times, GtfsStopTimeStruct[string]{
 					UniqueStopID:           stop_time.Stop().Id,
 					UniqueTripID:           trip.Id,
-					ArrivalTimeInSeconds:   stop_time.Arrival_time().SecondsSinceMidnight(),
-					DepartureTimeInSeconds: stop_time.Departure_time().SecondsSinceMidnight(),
+					ArrivalTimeInSeconds:   int64(stop_time.Arrival_time().SecondsSinceMidnight()),
+					DepartureTimeInSeconds: int64(stop_time.Departure_time().SecondsSinceMidnight()),
 					StopSequence:           stop_time.Sequence(),
 				})
 			}
@@ -185,8 +185,8 @@ func TestForwardRaptorLIRR(t *testing.T) {
 			stop_times = append(stop_times, GtfsStopTimeStruct[string]{
 				UniqueStopID:           stop_time.Stop().Id,
 				UniqueTripID:           trip.Id,
-				ArrivalTimeInSeconds:   stop_time.Arrival_time().SecondsSinceMidnight(),
-				DepartureTimeInSeconds: stop_time.Departure_time().SecondsSinceMidnight(),
+				ArrivalTimeInSeconds:   int64(stop_time.Arrival_time().SecondsSinceMidnight()),
+				DepartureTimeInSeconds: int64(stop_time.Departure_time().SecondsSinceMidnight()),
 				StopSequence:           stop_time.Sequence(),
 			})
 		}
@@ -200,7 +200,7 @@ func TestForwardRaptorLIRR(t *testing.T) {
 			StopTimes:        stop_times,
 			Mode:             RaptorModeDepartAt,
 			DateOfService:    "20250814",
-			TimeInSeconds:    9 * 3600,
+			TimeInSeconds:    int64(9 * 3600),
 			MaximumTransfers: 4,
 		},
 	)
@@ -285,8 +285,8 @@ func TestReverseRaptor(t *testing.T) {
 				stop_times = append(stop_times, GtfsStopTimeStruct[string]{
 					UniqueStopID:           stop_time.Stop().Id,
 					UniqueTripID:           trip.Id,
-					ArrivalTimeInSeconds:   stop_time.Arrival_time().SecondsSinceMidnight(),
-					DepartureTimeInSeconds: stop_time.Departure_time().SecondsSinceMidnight(),
+					ArrivalTimeInSeconds:   int64(stop_time.Arrival_time().SecondsSinceMidnight()),
+					DepartureTimeInSeconds: int64(stop_time.Departure_time().SecondsSinceMidnight()),
 					StopSequence:           stop_time.Sequence(),
 				})
 			}
