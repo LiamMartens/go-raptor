@@ -294,11 +294,17 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 				 */
 
 				/* we want to only take the required slice ; ie if we already scanned some stop times after the current sequence we only need to check the missing ones */
+				/* we'll also check the sequence offset because the input may have omitted a number of irrelevant stop times at the start */
 				var stop_times_for_unique_trip_id_after_current_stop []StopTimeType
+				stop_times_for_unique_trip_id := prepared_input.StopTimesByUniqueTripId[stop_time_for_marked_stop.GetUniqueTripID()]
+				trip_stop_times_sequence_offset := stop_times_for_unique_trip_id[0].GetStopSequence()
+				/* we want to subtract the first stop time sequence and add 1 to skip the current one if the current one is the same */
+				stop_times_start_offset := stop_time_for_marked_stop.GetStopSequence() - trip_stop_times_sequence_offset + 1
+				stop_times_end_offset := trip_already_scanned_from_sequence - trip_stop_times_sequence_offset
 				if !has_already_scanned_trip_from_sequence {
-					stop_times_for_unique_trip_id_after_current_stop = prepared_input.StopTimesByUniqueTripId[stop_time_for_marked_stop.GetUniqueTripID()][stop_time_for_marked_stop.GetStopSequence():]
+					stop_times_for_unique_trip_id_after_current_stop = stop_times_for_unique_trip_id[stop_times_start_offset:]
 				} else {
-					stop_times_for_unique_trip_id_after_current_stop = prepared_input.StopTimesByUniqueTripId[stop_time_for_marked_stop.GetUniqueTripID()][stop_time_for_marked_stop.GetStopSequence():trip_already_scanned_from_sequence]
+					stop_times_for_unique_trip_id_after_current_stop = stop_times_for_unique_trip_id[stop_times_start_offset:stop_times_end_offset]
 				}
 
 				/* the stop times are expected to be in order of sequence ascending */
@@ -463,14 +469,15 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 				 * we're essentially just going down the line in reverse and storing each stop time if the arrival time is later than the currently stored one
 				 * (meaning I could get to this stop later than initially expected)
 				 */
-				stop_times_for_unique_trip_id := prepared_input.StopTimesByUniqueTripId[stop_time_for_marked_stop.GetUniqueTripID()]
 				/* to get these we want to reverse the stop sequence and skip one to exclude my current stop which I already checked */
 				var stop_times_for_unique_trip_id_after_current_stop []StopTimeType
+				stop_times_for_unique_trip_id := prepared_input.StopTimesByUniqueTripId[stop_time_for_marked_stop.GetUniqueTripID()]
+				stop_times_last_sequence := stop_times_for_unique_trip_id[0].GetStopSequence()
+				stop_times_start_offset := stop_times_last_sequence - stop_time_for_marked_stop.GetStopSequence() + 1
 				if !has_already_scanned_trip_from_sequence {
-					stop_times_for_unique_trip_id_after_current_stop = stop_times_for_unique_trip_id[len(stop_times_for_unique_trip_id)-stop_time_for_marked_stop.GetStopSequence()+1:]
+					stop_times_for_unique_trip_id_after_current_stop = stop_times_for_unique_trip_id[stop_times_start_offset:]
 				} else {
-					stop_times_length := len(stop_times_for_unique_trip_id)
-					stop_times_for_unique_trip_id_after_current_stop = stop_times_for_unique_trip_id[stop_times_length-stop_time_for_marked_stop.GetStopSequence()+1 : stop_times_length-trip_already_scanned_from_sequence]
+					stop_times_for_unique_trip_id_after_current_stop = stop_times_for_unique_trip_id[stop_times_start_offset : stop_times_last_sequence-trip_already_scanned_from_sequence]
 				}
 
 				/* the stop times are expected to be in order of sequence descending */
