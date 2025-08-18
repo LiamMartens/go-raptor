@@ -92,14 +92,16 @@ func TestForwardRaptor(t *testing.T) {
 	raptor_start_time := time.Now()
 	journeys := SimpleRaptor(
 		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
-			FromStops:        from_stops,
-			ToStops:          to_stops,
-			Transfers:        transfers,
-			StopTimes:        stop_times,
-			Mode:             RaptorModeDepartAt,
-			DateOfService:    "20250814",
-			TimeInSeconds:    9 * 3600,
-			MaximumTransfers: 4,
+			FromStops:              from_stops,
+			ToStops:                to_stops,
+			Transfers:              transfers,
+			StopTimes:              stop_times,
+			Mode:                   RaptorModeDepartAt,
+			DateOfService:          "20250814",
+			TimeInSeconds:          9 * 3600,
+			MaximumTransfers:       4,
+			AllowArrivalByTransfer: false,
+			AllowTransferHopping:   false,
 		},
 	)
 	fmt.Printf("found %d journeys in time %v\n", len(journeys), time.Since(raptor_start_time))
