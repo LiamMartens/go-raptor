@@ -11,7 +11,7 @@ import (
  * but not across feeds - however to make an efficient RAPTOR calculation we will be operating on lists of stops/stoptimes etc.. from multiple feeds
  */
 type UniqueGtfsIdLike interface {
-	int | string
+	uint32 | uint64 | int32 | int64 | string
 }
 
 /** we will usually want to operate on times in seconds since the start of the day - this makes for easy comparisons */
