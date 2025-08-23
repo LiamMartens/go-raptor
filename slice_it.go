@@ -64,12 +64,12 @@ func (it *SliceIterator[T]) First() T {
 	return it.data[0]
 }
 
-func (it *SliceIterator[T]) SliceIterator(from_inclusive int, num_items int) *SliceIterator[T] {
+func (it *SliceIterator[T]) SliceIterator(from_inclusive int, to_exclusive int) *SliceIterator[T] {
 	if it.reverse {
 		/* interpret from_inclusive index as the index as if it the list were in reverse */
-		return NewSliceIterator(it.data[it.length-from_inclusive-num_items:it.length-from_inclusive], it.reverse)
+		return NewSliceIterator(it.data[it.length-to_exclusive:it.length-from_inclusive], it.reverse)
 	}
-	return NewSliceIterator(it.data[from_inclusive:from_inclusive+num_items], it.reverse)
+	return NewSliceIterator(it.data[from_inclusive:to_exclusive], it.reverse)
 }
 
 /**
