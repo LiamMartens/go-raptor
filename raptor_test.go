@@ -27,14 +27,14 @@ func TestSimpleForwardRaptor(t *testing.T) {
 			},
 			Transfers: []GtfsTransferStruct[string]{},
 			StopTimes: []GtfsStopTimeStruct[string]{
-				{UniqueStopID: "High St", UniqueTripID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
 			},
 			Mode: RaptorModeDepartAt,
 			/* 2025/08/23 12:00:00PM EDT */
@@ -68,14 +68,14 @@ func TestSimpleReverseRaptor(t *testing.T) {
 			},
 			Transfers: []GtfsTransferStruct[string]{},
 			StopTimes: []GtfsStopTimeStruct[string]{
-				{UniqueStopID: "High St", UniqueTripID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
 			},
 			Mode: RaptorModeArriveBy,
 			/* 2025/08/23 12:00:00PM EDT */
@@ -109,20 +109,20 @@ func TestSimpleForwardRaptor_MultiTrip(t *testing.T) {
 			},
 			Transfers: []GtfsTransferStruct[string]{},
 			StopTimes: []GtfsStopTimeStruct[string]{
-				{UniqueStopID: "High St", UniqueTripID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250822", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 125, DepartureTimeInSeconds: epoch_20250822_120000_edt + 135},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250822", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 200, DepartureTimeInSeconds: epoch_20250822_120000_edt + 210},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250822", UniqueTripServiceID: "C_20250822", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 125, DepartureTimeInSeconds: epoch_20250822_120000_edt + 135},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250822", UniqueTripServiceID: "C_20250822", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 200, DepartureTimeInSeconds: epoch_20250822_120000_edt + 210},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250823", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 125, DepartureTimeInSeconds: epoch_20250823_120000_edt + 135},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250823", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 200, DepartureTimeInSeconds: epoch_20250823_120000_edt + 210},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250823", UniqueTripServiceID: "C_20250823", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 125, DepartureTimeInSeconds: epoch_20250823_120000_edt + 135},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250823", UniqueTripServiceID: "C_20250823", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 200, DepartureTimeInSeconds: epoch_20250823_120000_edt + 210},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250824", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 125, DepartureTimeInSeconds: epoch_20250824_120000_edt + 135},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250824", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 200, DepartureTimeInSeconds: epoch_20250824_120000_edt + 210},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250824", UniqueTripServiceID: "C_20250824", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 125, DepartureTimeInSeconds: epoch_20250824_120000_edt + 135},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250824", UniqueTripServiceID: "C_20250824", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 200, DepartureTimeInSeconds: epoch_20250824_120000_edt + 210},
 			},
 			Mode: RaptorModeDepartAt,
 			/* 2025/08/23 12:00:00PM EDT */
@@ -158,20 +158,20 @@ func TestSimpleForwardRaptor_ManualTransfer(t *testing.T) {
 				{FromUniqueStopID: "Jay St", ToUniqueStopID: "Hoyt St", MinimumTransferTimeInSeconds: 0},
 			},
 			StopTimes: []GtfsStopTimeStruct[string]{
-				{UniqueStopID: "High St", UniqueTripID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
-				{UniqueStopID: "Jay St", UniqueTripID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250822", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 125, DepartureTimeInSeconds: epoch_20250822_120000_edt + 135},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250822", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 200, DepartureTimeInSeconds: epoch_20250822_120000_edt + 210},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
+				{UniqueStopID: "Jay St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250822", UniqueTripServiceID: "C_20250822", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 125, DepartureTimeInSeconds: epoch_20250822_120000_edt + 135},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250822", UniqueTripServiceID: "C_20250822", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 200, DepartureTimeInSeconds: epoch_20250822_120000_edt + 210},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
-				{UniqueStopID: "Jay St", UniqueTripID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250823", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 125, DepartureTimeInSeconds: epoch_20250823_120000_edt + 135},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250823", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 200, DepartureTimeInSeconds: epoch_20250823_120000_edt + 210},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
+				{UniqueStopID: "Jay St", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250823", UniqueTripServiceID: "C_20250823", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 125, DepartureTimeInSeconds: epoch_20250823_120000_edt + 135},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250823", UniqueTripServiceID: "C_20250823", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 200, DepartureTimeInSeconds: epoch_20250823_120000_edt + 210},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
-				{UniqueStopID: "Jay St", UniqueTripID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
-				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250824", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 125, DepartureTimeInSeconds: epoch_20250824_120000_edt + 135},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250824", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 200, DepartureTimeInSeconds: epoch_20250824_120000_edt + 210},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
+				{UniqueStopID: "Jay St", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
+				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250824", UniqueTripServiceID: "C_20250824", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 125, DepartureTimeInSeconds: epoch_20250824_120000_edt + 135},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "C_20250824", UniqueTripServiceID: "C_20250824", StopSequence: 9, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 200, DepartureTimeInSeconds: epoch_20250824_120000_edt + 210},
 			},
 			Mode: RaptorModeDepartAt,
 			/* 2025/08/23 12:00:00PM EDT */
@@ -211,11 +211,11 @@ func TestSimpleForwardRaptor_NoTransferStart(t *testing.T) {
 				},
 			},
 			StopTimes: []GtfsStopTimeStruct[string]{
-				{UniqueStopID: "High St", UniqueTripID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
 
-				{UniqueStopID: "High St", UniqueTripID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
-				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
+				{UniqueStopID: "High St", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250824", UniqueTripServiceID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
 			},
 			Mode: RaptorModeDepartAt,
 			/* 2025/08/23 12:00:00PM EDT */

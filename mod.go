@@ -29,7 +29,10 @@ type GtfsTransfer[ID UniqueGtfsIdLike] interface {
 
 type GtfsStopTime[ID UniqueGtfsIdLike] interface {
 	GetUniqueStopID() ID
+	/* this is the unique trip ID - but could be repeated across days */
 	GetUniqueTripID() ID
+	/* this is the daily unique trip ID - should be actually unique */
+	GetUniqueTripServiceID() ID
 	GetStopSequence() int
 	GetArrivalTimeInSeconds() TimestampInSeconds
 	GetDepartureTimeInSeconds() TimestampInSeconds
@@ -161,19 +164,19 @@ type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType 
 	AllowTransferHopping bool
 
 	/** these can be passed if they are pre-calculated in memory before running raptor; useful for speeding up the actual raptor */
-	TransfersByUniqueStopId *map[ID][]TransferType
-	StopTimesByUniqueStopId *map[ID][]StopTimeType
-	StopTimesByUniqueTripId *map[ID][]StopTimeType
+	TransfersByUniqueStopId        *map[ID][]TransferType
+	StopTimesByUniqueStopId        *map[ID][]StopTimeType
+	StopTimesByUniqueTripServiceId *map[ID][]StopTimeType
 }
 
 type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
 	Input SimpleRaptorInput[ID, StopType, TransferType, StopTimeType]
 
-	FromStopsByUniqueStopId map[ID]ID
-	ToStopsByUniqueStopId   map[ID]ID
-	TransfersByUniqueStopId map[ID][]TransferType
-	StopTimesByUniqueStopId map[ID][]StopTimeType
-	StopTimesByUniqueTripId map[ID][]StopTimeType
+	FromStopsByUniqueStopId        map[ID]ID
+	ToStopsByUniqueStopId          map[ID]ID
+	TransfersByUniqueStopId        map[ID][]TransferType
+	StopTimesByUniqueStopId        map[ID][]StopTimeType
+	StopTimesByUniqueTripServiceId map[ID][]StopTimeType
 }
 
 type RaptorMarkedStopSource = string
@@ -232,16 +235,16 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 
 	/** create a map of stop times by stop id and by trip id for easy lookup */
 	has_prepared_stop_times_by_unique_stop_id := input.StopTimesByUniqueStopId != nil
-	has_prepared_stop_times_by_unique_trip_id := input.StopTimesByUniqueTripId != nil
+	has_prepared_stop_times_by_unique_trip_service_id := input.StopTimesByUniqueTripServiceId != nil
 	stop_times_by_unique_stop_id := map[ID][]StopTimeType{}
-	stop_times_by_unique_trip_id := map[ID][]StopTimeType{}
+	stop_times_by_unique_trip_service_id := map[ID][]StopTimeType{}
 	if has_prepared_stop_times_by_unique_stop_id {
 		stop_times_by_unique_stop_id = *input.StopTimesByUniqueStopId
 	}
-	if has_prepared_stop_times_by_unique_trip_id {
-		stop_times_by_unique_trip_id = *input.StopTimesByUniqueTripId
+	if has_prepared_stop_times_by_unique_trip_service_id {
+		stop_times_by_unique_trip_service_id = *input.StopTimesByUniqueTripServiceId
 	}
-	if !has_prepared_stop_times_by_unique_stop_id || !has_prepared_stop_times_by_unique_trip_id {
+	if !has_prepared_stop_times_by_unique_stop_id || !has_prepared_stop_times_by_unique_trip_service_id {
 		for _, stop_time := range input.StopTimes {
 			if !has_prepared_stop_times_by_unique_stop_id {
 				if _, has_key := stop_times_by_unique_stop_id[stop_time.GetUniqueStopID()]; !has_key {
@@ -250,22 +253,22 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 				stop_times_by_unique_stop_id[stop_time.GetUniqueStopID()] = append(stop_times_by_unique_stop_id[stop_time.GetUniqueStopID()], stop_time)
 			}
 
-			if !has_prepared_stop_times_by_unique_trip_id {
-				if _, has_key := stop_times_by_unique_trip_id[stop_time.GetUniqueTripID()]; !has_key {
-					stop_times_by_unique_trip_id[stop_time.GetUniqueTripID()] = []StopTimeType{}
+			if !has_prepared_stop_times_by_unique_trip_service_id {
+				if _, has_key := stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()]; !has_key {
+					stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()] = []StopTimeType{}
 				}
-				stop_times_by_unique_trip_id[stop_time.GetUniqueTripID()] = append(stop_times_by_unique_trip_id[stop_time.GetUniqueTripID()], stop_time)
+				stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()] = append(stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()], stop_time)
 			}
 		}
 	}
 
 	return PreparedRaptorInput[ID, StopType, TransferType, StopTimeType]{
-		Input:                   input,
-		FromStopsByUniqueStopId: from_stops_by_unique_stop_id,
-		ToStopsByUniqueStopId:   to_stops_by_unique_stop_id,
-		TransfersByUniqueStopId: transfers_by_unique_stop_id,
-		StopTimesByUniqueStopId: stop_times_by_unique_stop_id,
-		StopTimesByUniqueTripId: stop_times_by_unique_trip_id,
+		Input:                          input,
+		FromStopsByUniqueStopId:        from_stops_by_unique_stop_id,
+		ToStopsByUniqueStopId:          to_stops_by_unique_stop_id,
+		TransfersByUniqueStopId:        transfers_by_unique_stop_id,
+		StopTimesByUniqueStopId:        stop_times_by_unique_stop_id,
+		StopTimesByUniqueTripServiceId: stop_times_by_unique_trip_service_id,
 	}
 }
 
@@ -343,7 +346,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 				/* we want to only take the required slice ; ie if we already scanned some stop times after the current sequence we only need to check the missing ones */
 				/* we'll also check the sequence offset because the input may have omitted a number of irrelevant stop times at the start */
 				var stop_times_for_unique_trip_id_after_current_stop_it *SliceIterator[StopTimeType]
-				stop_times_for_unique_trip_id_it := NewSliceIterator(prepared_input.StopTimesByUniqueTripId[stop_time_for_marked_stop.GetUniqueTripID()], false)
+				stop_times_for_unique_trip_id_it := NewSliceIterator(prepared_input.StopTimesByUniqueTripServiceId[stop_time_for_marked_stop.GetUniqueTripServiceID()], false)
 				trip_stop_times_sequence_offset := stop_times_for_unique_trip_id_it.First().GetStopSequence()
 				/* we want to subtract the first stop time sequence and add 1 to skip the current one if the current one is the same */
 				stop_times_start_offset := stop_time_for_marked_stop.GetStopSequence() - trip_stop_times_sequence_offset + 1
@@ -370,6 +373,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 							ToUniqueStopID:   following_stop_time.GetUniqueStopID(),
 							ViaTrip: &ViaTrip[ID]{
 								UniqueTripID:           following_stop_time.GetUniqueTripID(),
+								UniqueTripServiceID:    following_stop_time.GetUniqueTripServiceID(),
 								FromStopSequenceInTrip: stop_time_for_marked_stop.GetStopSequence(),
 								ToStopSequenceInTrip:   following_stop_time.GetStopSequence(),
 							},
@@ -526,7 +530,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 				 */
 				/* to get these we want to reverse the stop sequence and skip one to exclude my current stop which I already checked */
 				var stop_times_for_unique_trip_id_after_current_stop_it *SliceIterator[StopTimeType]
-				stop_times_for_unique_trip_id_it := NewSliceIterator(prepared_input.StopTimesByUniqueTripId[stop_time_for_marked_stop.GetUniqueTripID()], true)
+				stop_times_for_unique_trip_id_it := NewSliceIterator(prepared_input.StopTimesByUniqueTripServiceId[stop_time_for_marked_stop.GetUniqueTripServiceID()], true)
 				stop_times_last_sequence := stop_times_for_unique_trip_id_it.First().GetStopSequence()
 				stop_times_start_offset := stop_times_last_sequence - stop_time_for_marked_stop.GetStopSequence() + 1
 				stop_times_end_offset := stop_times_last_sequence - trip_already_scanned_from_sequence
@@ -552,6 +556,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 								ToUniqueStopID:   stop_time_for_marked_stop.GetUniqueStopID(),
 								ViaTrip: &ViaTrip[ID]{
 									UniqueTripID:           preceeding_stop_time.GetUniqueTripID(),
+									UniqueTripServiceID:    preceeding_stop_time.GetUniqueTripServiceID(),
 									FromStopSequenceInTrip: preceeding_stop_time.GetStopSequence(),
 									ToStopSequenceInTrip:   stop_time_for_marked_stop.GetStopSequence(),
 								},
