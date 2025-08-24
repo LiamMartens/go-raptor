@@ -145,10 +145,10 @@ type Journey[ID UniqueGtfsIdLike] struct {
 }
 
 type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
-	FromStops []StopType
-	ToStops   []StopType
-	Transfers []TransferType
-	StopTimes []StopTimeType
+	FromStops []*StopType
+	ToStops   []*StopType
+	Transfers []*TransferType
+	StopTimes []*StopTimeType
 	Mode      RaptorMode
 	/* will be used for either depart_at mode or arrive_by mode */
 	TimeInSeconds    TimestampInSeconds
@@ -157,19 +157,19 @@ type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType 
 	AllowTransferHopping bool
 
 	/** these can be passed if they are pre-calculated in memory before running raptor; useful for speeding up the actual raptor */
-	TransfersByUniqueStopId        *map[ID][]TransferType
-	StopTimesByUniqueStopId        *map[ID][]StopTimeType
-	StopTimesByUniqueTripServiceId *map[ID][]StopTimeType
+	TransfersByUniqueStopId        map[ID][]*TransferType
+	StopTimesByUniqueStopId        map[ID][]*StopTimeType
+	StopTimesByUniqueTripServiceId map[ID][]*StopTimeType
 }
 
 type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
-	Input SimpleRaptorInput[ID, StopType, TransferType, StopTimeType]
+	Input *SimpleRaptorInput[ID, StopType, TransferType, StopTimeType]
 
 	FromStopsByUniqueStopId        map[ID]ID
 	ToStopsByUniqueStopId          map[ID]ID
-	TransfersByUniqueStopId        map[ID][]TransferType
-	StopTimesByUniqueStopId        map[ID][]StopTimeType
-	StopTimesByUniqueTripServiceId map[ID][]StopTimeType
+	TransfersByUniqueStopId        map[ID][]*TransferType
+	StopTimesByUniqueStopId        map[ID][]*StopTimeType
+	StopTimesByUniqueTripServiceId map[ID][]*StopTimeType
 }
 
 type RaptorMarkedStop[ID UniqueGtfsIdLike] struct {
