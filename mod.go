@@ -433,7 +433,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					if _, is_destination_stop := prepared_input.ToStopsByUniqueStopId[following_stop_time.GetUniqueStopID()]; is_destination_stop {
 						segment := earliest_arrival_time_segments_by_unique_stop_id[following_stop_time.GetUniqueStopID()]
 						segment_fingerprint := segment.GetFingerPrint()
-						if _, has_same_trip := potential_journey_fingerprints[segment_fingerprint]; !has_same_trip && len(segment.Spans) > 0 {
+						if _, has_same_trip := potential_journey_fingerprints[segment_fingerprint]; !has_same_trip && len(segment.Spans) > 0 && segment.Spans[0].ViaTrip != nil && segment.Spans[len(segment.Spans)-1].ViaTrip != nil {
 							/* if the spans are 0 it means we were already at our stop in the first place */
 							segment_spans := make([]RoundSegmentSpan[ID], len(segment.Spans))
 							copy(segment_spans, segment.Spans)
@@ -618,7 +618,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					if _, is_origin_stop := prepared_input.FromStopsByUniqueStopId[preceeding_stop_time.GetUniqueStopID()]; is_origin_stop {
 						segment := latest_arrival_time_segments_by_unique_stop_id[preceeding_stop_time.GetUniqueStopID()]
 						segment_fingerprint := segment.GetFingerPrint()
-						if _, has_same_trip := potential_journey_fingerprints[segment_fingerprint]; !has_same_trip && len(segment.Spans) > 0 {
+						if _, has_same_trip := potential_journey_fingerprints[segment_fingerprint]; !has_same_trip && len(segment.Spans) > 0 && segment.Spans[0].ViaTrip != nil && segment.Spans[len(segment.Spans)-1].ViaTrip != nil {
 							/* if the spans are 0 it means we were already at our stop in the first place */
 							segment_spans := make([]RoundSegmentSpan[ID], len(segment.Spans))
 							copy(segment_spans, segment.Spans)
