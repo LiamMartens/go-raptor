@@ -189,3 +189,51 @@ func TestSimpleForwardRaptor_ManualTransfer(t *testing.T) {
 		t.Fatalf(`expected raptor to find arrival time %v but got %v`, epoch_20250823_120000_edt+200, journeys[0].ArrivalTimeInSeconds)
 	}
 }
+
+func TestSimpleForwardRaptor_NoTransferStart(t *testing.T) {
+	var epoch_20250823_120000_edt int64 = 1755964800
+	var epoch_20250824_120000_edt int64 = 1756051200
+
+	journeys := SimpleRaptor(
+		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
+			FromStops: []GtfsStopStruct[string]{
+				{UniqueID: "SANDS ST/PEARL ST "},
+				{UniqueID: "High St"},
+			},
+			ToStops: []GtfsStopStruct[string]{
+				{UniqueID: "Franklin Av"},
+			},
+			Transfers: []GtfsTransferStruct[string]{
+				{
+					FromUniqueStopID:             "SANDS ST/PEARL ST ",
+					ToUniqueStopID:               "High St",
+					MinimumTransferTimeInSeconds: 0,
+				},
+			},
+			StopTimes: []GtfsStopTimeStruct[string]{
+				{UniqueStopID: "High St", UniqueTripID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
+
+				{UniqueStopID: "High St", UniqueTripID: "A_20250824", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250824_120000_edt - 10, DepartureTimeInSeconds: epoch_20250824_120000_edt + 10},
+				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250824", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250824_120000_edt + 120, DepartureTimeInSeconds: epoch_20250824_120000_edt + 130},
+			},
+			Mode: RaptorModeDepartAt,
+			/* 2025/08/23 12:00:00PM EDT */
+			TimeInSeconds:        epoch_20250823_120000_edt,
+			MaximumTransfers:     4,
+			AllowTransferHopping: false,
+		},
+	)
+
+	if len(journeys) == 0 {
+		t.Fatalf(`did not find any journeys for stop times`)
+	}
+
+	if len(journeys) > 1 {
+		t.Fatalf(`expected to find 1 journey - should not allow starting at Pearl St and then walking to High St`)
+	}
+
+	if journeys[0].ArrivalTimeInSeconds != epoch_20250823_120000_edt+120 {
+		t.Fatalf(`expected raptor to find arrival time %v but got %v`, epoch_20250823_120000_edt+120, journeys[0].ArrivalTimeInSeconds)
+	}
+}
