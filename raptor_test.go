@@ -19,14 +19,14 @@ func TestSimpleForwardRaptor(t *testing.T) {
 
 	journeys := SimpleRaptor(
 		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
-			FromStops: []*GtfsStopStruct[string]{
+			FromStops: []GtfsStopStruct[string]{
 				{UniqueID: "High St"},
 			},
-			ToStops: []*GtfsStopStruct[string]{
+			ToStops: []GtfsStopStruct[string]{
 				{UniqueID: "Franklin Av"},
 			},
-			Transfers: []*GtfsTransferStruct[string]{},
-			StopTimes: []*GtfsStopTimeStruct[string]{
+			Transfers: []GtfsTransferStruct[string]{},
+			StopTimes: []GtfsStopTimeStruct[string]{
 				{UniqueStopID: "High St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
 				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
 
@@ -60,14 +60,14 @@ func TestSimpleReverseRaptor(t *testing.T) {
 
 	journeys := SimpleRaptor(
 		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
-			FromStops: []*GtfsStopStruct[string]{
+			FromStops: []GtfsStopStruct[string]{
 				{UniqueID: "High St"},
 			},
-			ToStops: []*GtfsStopStruct[string]{
+			ToStops: []GtfsStopStruct[string]{
 				{UniqueID: "Franklin Av"},
 			},
-			Transfers: []*GtfsTransferStruct[string]{},
-			StopTimes: []*GtfsStopTimeStruct[string]{
+			Transfers: []GtfsTransferStruct[string]{},
+			StopTimes: []GtfsStopTimeStruct[string]{
 				{UniqueStopID: "High St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
 				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
 
@@ -101,14 +101,14 @@ func TestSimpleForwardRaptor_MultiTrip(t *testing.T) {
 
 	journeys := SimpleRaptor(
 		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
-			FromStops: []*GtfsStopStruct[string]{
+			FromStops: []GtfsStopStruct[string]{
 				{UniqueID: "High St"},
 			},
-			ToStops: []*GtfsStopStruct[string]{
+			ToStops: []GtfsStopStruct[string]{
 				{UniqueID: "Franklin Av"},
 			},
-			Transfers: []*GtfsTransferStruct[string]{},
-			StopTimes: []*GtfsStopTimeStruct[string]{
+			Transfers: []GtfsTransferStruct[string]{},
+			StopTimes: []GtfsStopTimeStruct[string]{
 				{UniqueStopID: "High St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
 				{UniqueStopID: "Hoyt St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
 				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250822", UniqueTripServiceID: "C_20250822", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 125, DepartureTimeInSeconds: epoch_20250822_120000_edt + 135},
@@ -148,16 +148,16 @@ func TestSimpleForwardRaptor_ManualTransfer(t *testing.T) {
 
 	journeys := SimpleRaptor(
 		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
-			FromStops: []*GtfsStopStruct[string]{
+			FromStops: []GtfsStopStruct[string]{
 				{UniqueID: "High St"},
 			},
-			ToStops: []*GtfsStopStruct[string]{
+			ToStops: []GtfsStopStruct[string]{
 				{UniqueID: "Franklin Av"},
 			},
-			Transfers: []*GtfsTransferStruct[string]{
+			Transfers: []GtfsTransferStruct[string]{
 				{FromUniqueStopID: "Jay St", ToUniqueStopID: "Hoyt St", MinimumTransferTimeInSeconds: 0},
 			},
-			StopTimes: []*GtfsStopTimeStruct[string]{
+			StopTimes: []GtfsStopTimeStruct[string]{
 				{UniqueStopID: "High St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250822_120000_edt - 10, DepartureTimeInSeconds: epoch_20250822_120000_edt + 10},
 				{UniqueStopID: "Jay St", UniqueTripID: "A_20250822", UniqueTripServiceID: "A_20250822", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 120, DepartureTimeInSeconds: epoch_20250822_120000_edt + 130},
 				{UniqueStopID: "Hoyt St", UniqueTripID: "C_20250822", UniqueTripServiceID: "C_20250822", StopSequence: 8, ArrivalTimeInSeconds: epoch_20250822_120000_edt + 125, DepartureTimeInSeconds: epoch_20250822_120000_edt + 135},
@@ -196,21 +196,21 @@ func TestSimpleForwardRaptor_NoTransferStart(t *testing.T) {
 
 	journeys := SimpleRaptor(
 		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
-			FromStops: []*GtfsStopStruct[string]{
+			FromStops: []GtfsStopStruct[string]{
 				{UniqueID: "SANDS ST/PEARL ST "},
 				{UniqueID: "High St"},
 			},
-			ToStops: []*GtfsStopStruct[string]{
+			ToStops: []GtfsStopStruct[string]{
 				{UniqueID: "Franklin Av"},
 			},
-			Transfers: []*GtfsTransferStruct[string]{
+			Transfers: []GtfsTransferStruct[string]{
 				{
 					FromUniqueStopID:             "SANDS ST/PEARL ST ",
 					ToUniqueStopID:               "High St",
 					MinimumTransferTimeInSeconds: 0,
 				},
 			},
-			StopTimes: []*GtfsStopTimeStruct[string]{
+			StopTimes: []GtfsStopTimeStruct[string]{
 				{UniqueStopID: "High St", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 5, ArrivalTimeInSeconds: epoch_20250823_120000_edt - 10, DepartureTimeInSeconds: epoch_20250823_120000_edt + 10},
 				{UniqueStopID: "Franklin Av", UniqueTripID: "A_20250823", UniqueTripServiceID: "A_20250823", StopSequence: 6, ArrivalTimeInSeconds: epoch_20250823_120000_edt + 120, DepartureTimeInSeconds: epoch_20250823_120000_edt + 130},
 
