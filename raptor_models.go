@@ -144,15 +144,10 @@ type Journey[ID UniqueGtfsIdLike] struct {
 	Legs                   []RoundSegmentSpan[ID]
 }
 
-type StopTimePartitionsPartition struct {
-	Timestamp TimestampInSeconds
-	Index     int
-}
-
 type StopTimePartitions[ID UniqueGtfsIdLike] struct {
-	Partitions                      []StopTimePartitionsPartition
-	PartitionsByUniqueStopID        map[ID][]StopTimePartitionsPartition
-	PartitionsByUniqueTripServiveID map[ID][]StopTimePartitionsPartition
+	Partitions                      map[TimestampInSeconds]int
+	PartitionsByUniqueStopID        map[ID]map[TimestampInSeconds]int
+	PartitionsByUniqueTripServiveID map[ID]map[TimestampInSeconds]int
 }
 
 type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {

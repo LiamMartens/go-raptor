@@ -33,6 +33,8 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 	/** create a map of stop times by stop id and by trip id for easy lookup */
 	has_prepared_stop_times_by_unique_stop_id := input.StopTimesByUniqueStopId != nil
 	has_prepared_stop_times_by_unique_trip_service_id := input.StopTimesByUniqueTripServiceId != nil
+	has_prepared_stop_time_partitions := input.TimePartitions != nil
+	time_partitions := StopTimePartitions[ID]{}
 	stop_times_by_unique_stop_id := map[ID][]int{}
 	stop_times_by_unique_trip_service_id := map[ID][]int{}
 	if has_prepared_stop_times_by_unique_stop_id {
@@ -41,7 +43,10 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 	if has_prepared_stop_times_by_unique_trip_service_id {
 		stop_times_by_unique_trip_service_id = *input.StopTimesByUniqueTripServiceId
 	}
-	if !has_prepared_stop_times_by_unique_stop_id || !has_prepared_stop_times_by_unique_trip_service_id {
+	if has_prepared_stop_time_partitions {
+		time_partitions = *input.TimePartitions
+	}
+	if !has_prepared_stop_times_by_unique_stop_id || !has_prepared_stop_times_by_unique_trip_service_id || !has_prepared_stop_time_partitions {
 		for index, stop_time := range input.StopTimes {
 			if !has_prepared_stop_times_by_unique_stop_id {
 				if _, has_key := stop_times_by_unique_stop_id[stop_time.GetUniqueStopID()]; !has_key {
@@ -56,6 +61,32 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 				}
 				stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()] = append(stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()], index)
 			}
+
+			if !has_prepared_stop_time_partitions {
+				partition_interval := input.TimePartitionInterval
+				if partition_interval == 0 {
+					/* partition by day */
+					partition_interval = 86400
+				}
+
+				arrival_time_secs := stop_time.GetArrivalTimeInSeconds()
+				current_partition := arrival_time_secs - (arrival_time_secs % partition_interval)
+				if _, has_partition := time_partitions.Partitions[current_partition]; !has_partition {
+					time_partitions.Partitions[current_partition] = index
+				}
+				if _, has_stop_map := time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()]; !has_stop_map {
+					time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()] = map[TimestampInSeconds]int{}
+				}
+				if _, has_partition := time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()]; !has_partition {
+					time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()][current_partition] = index
+				}
+				if _, has_trip_map := time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()]; !has_trip_map {
+					time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()] = map[TimestampInSeconds]int{}
+				}
+				if _, has_partition := time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()]; !has_partition {
+					time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()][current_partition] = index
+				}
+			}
 		}
 	}
 
@@ -66,6 +97,7 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 		TransfersByUniqueStopId:        transfers_by_unique_stop_id,
 		StopTimesByUniqueStopId:        stop_times_by_unique_stop_id,
 		StopTimesByUniqueTripServiceId: stop_times_by_unique_trip_service_id,
+		TimePartitions:                 time_partitions,
 	}
 }
 
