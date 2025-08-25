@@ -144,6 +144,17 @@ type Journey[ID UniqueGtfsIdLike] struct {
 	Legs                   []RoundSegmentSpan[ID]
 }
 
+type StopTimesTimeGroupsGroup struct {
+	Timestamp TimestampInSeconds
+	Index     int
+}
+
+type StopTimesTimeGroups[ID UniqueGtfsIdLike] struct {
+	Groups                      []StopTimesTimeGroupsGroup
+	GroupsByUniqueStopID        map[ID][]StopTimesTimeGroupsGroup
+	GrouspByUniqueTripServiveID map[ID][]StopTimesTimeGroupsGroup
+}
+
 type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
 	FromStops []StopType
 	ToStops   []StopType
@@ -156,10 +167,14 @@ type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType 
 	/* determines whether to allow walk-transferring more than once */
 	AllowTransferHopping bool
 
+	/* determines how to group times - defaults to 86400 seconds / per day */
+	TimeGroupBy TimestampInSeconds
+
 	/** these can be passed if they are pre-calculated in memory before running raptor; useful for speeding up the actual raptor - uints refer to their list indexes from the input */
-	TransfersByUniqueStopId        map[ID][]int
-	StopTimesByUniqueStopId        map[ID][]int
-	StopTimesByUniqueTripServiceId map[ID][]int
+	TransfersByUniqueStopId        *map[ID][]int
+	StopTimesByUniqueStopId        *map[ID][]int
+	StopTimesByUniqueTripServiceId *map[ID][]int
+	TimeGroups                     *StopTimesTimeGroups[ID]
 }
 
 type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
@@ -170,6 +185,8 @@ type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTyp
 	TransfersByUniqueStopId        map[ID][]int
 	StopTimesByUniqueStopId        map[ID][]int
 	StopTimesByUniqueTripServiceId map[ID][]int
+
+	TimeGroups StopTimesTimeGroups[ID]
 }
 
 type RaptorMarkedStop[ID UniqueGtfsIdLike] struct {

@@ -20,7 +20,7 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 	/** create a map of transfers from stop IDs for easy lookup */
 	transfers_by_unique_stop_id := map[ID][]int{}
 	if input.TransfersByUniqueStopId != nil {
-		transfers_by_unique_stop_id = input.TransfersByUniqueStopId
+		transfers_by_unique_stop_id = *input.TransfersByUniqueStopId
 	} else {
 		for index, transfer := range input.Transfers {
 			if _, has_key := transfers_by_unique_stop_id[transfer.GetFromUniqueStopID()]; !has_key {
@@ -36,10 +36,10 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 	stop_times_by_unique_stop_id := map[ID][]int{}
 	stop_times_by_unique_trip_service_id := map[ID][]int{}
 	if has_prepared_stop_times_by_unique_stop_id {
-		stop_times_by_unique_stop_id = input.StopTimesByUniqueStopId
+		stop_times_by_unique_stop_id = *input.StopTimesByUniqueStopId
 	}
 	if has_prepared_stop_times_by_unique_trip_service_id {
-		stop_times_by_unique_trip_service_id = input.StopTimesByUniqueTripServiceId
+		stop_times_by_unique_trip_service_id = *input.StopTimesByUniqueTripServiceId
 	}
 	if !has_prepared_stop_times_by_unique_stop_id || !has_prepared_stop_times_by_unique_trip_service_id {
 		for index, stop_time := range input.StopTimes {
