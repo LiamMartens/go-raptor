@@ -144,15 +144,15 @@ type Journey[ID UniqueGtfsIdLike] struct {
 	Legs                   []RoundSegmentSpan[ID]
 }
 
-type StopTimesTimeGroupsGroup struct {
+type StopTimePartitionsPartition struct {
 	Timestamp TimestampInSeconds
 	Index     int
 }
 
-type StopTimesTimeGroups[ID UniqueGtfsIdLike] struct {
-	Groups                      []StopTimesTimeGroupsGroup
-	GroupsByUniqueStopID        map[ID][]StopTimesTimeGroupsGroup
-	GrouspByUniqueTripServiveID map[ID][]StopTimesTimeGroupsGroup
+type StopTimePartitions[ID UniqueGtfsIdLike] struct {
+	Partitions                      []StopTimePartitionsPartition
+	PartitionsByUniqueStopID        map[ID][]StopTimePartitionsPartition
+	PartitionsByUniqueTripServiveID map[ID][]StopTimePartitionsPartition
 }
 
 type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
@@ -168,13 +168,13 @@ type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType 
 	AllowTransferHopping bool
 
 	/* determines how to group times - defaults to 86400 seconds / per day */
-	TimeGroupBy TimestampInSeconds
+	TimePartitionInterval TimestampInSeconds
 
 	/** these can be passed if they are pre-calculated in memory before running raptor; useful for speeding up the actual raptor - uints refer to their list indexes from the input */
 	TransfersByUniqueStopId        *map[ID][]int
 	StopTimesByUniqueStopId        *map[ID][]int
 	StopTimesByUniqueTripServiceId *map[ID][]int
-	TimeGroups                     *StopTimesTimeGroups[ID]
+	TimePartitions                 *StopTimePartitions[ID]
 }
 
 type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
@@ -185,8 +185,7 @@ type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTyp
 	TransfersByUniqueStopId        map[ID][]int
 	StopTimesByUniqueStopId        map[ID][]int
 	StopTimesByUniqueTripServiceId map[ID][]int
-
-	TimeGroups StopTimesTimeGroups[ID]
+	TimePartitions                 StopTimePartitions[ID]
 }
 
 type RaptorMarkedStop[ID UniqueGtfsIdLike] struct {
