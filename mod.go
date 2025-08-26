@@ -41,6 +41,13 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 	has_prepared_stop_times_by_unique_stop_id := input.StopTimesByUniqueStopId != nil
 	has_prepared_stop_times_by_unique_trip_service_id := input.StopTimesByUniqueTripServiceId != nil
 	has_prepared_stop_time_partitions := input.TimePartitions != nil
+	is_partially_prepared := !(has_prepared_stop_times_by_unique_stop_id && has_prepared_stop_times_by_unique_trip_service_id && has_prepared_stop_time_partitions) &&
+		!(!has_prepared_stop_times_by_unique_stop_id && !has_prepared_stop_times_by_unique_trip_service_id && !has_prepared_stop_time_partitions)
+
+	if is_partially_prepared {
+		panic("When passing stop time mappings as inputs you need to pass all mappings and partitions")
+	}
+
 	time_partitions := StopTimePartitions[ID]{
 		Partitions:                      map[TimestampInSeconds]int{},
 		PartitionsByUniqueStopID:        map[ID]map[TimestampInSeconds]int{},
