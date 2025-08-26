@@ -161,6 +161,8 @@ type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType 
 	MaximumTransfers int
 	/* determines whether to allow walk-transferring more than once */
 	AllowTransferHopping bool
+	/** determines the cut off time for any stop time lookup */
+	StopTimeCutOffTimestamp TimestampInSeconds
 
 	/* determines how to group times - defaults to 86400 seconds / per day */
 	TimePartitionInterval TimestampInSeconds
@@ -180,7 +182,9 @@ type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTyp
 	TransfersByUniqueStopId        map[ID][]int
 	StopTimesByUniqueStopId        map[ID][]int
 	StopTimesByUniqueTripServiceId map[ID][]int
-	TimePartitions                 StopTimePartitions[ID]
+
+	TimePartitionInterval TimestampInSeconds
+	TimePartitions        StopTimePartitions[ID]
 }
 
 type RaptorMarkedStop[ID UniqueGtfsIdLike] struct {

@@ -38,9 +38,10 @@ func TestSimpleForwardRaptor(t *testing.T) {
 			},
 			Mode: RaptorModeDepartAt,
 			/* 2025/08/23 12:00:00PM EDT */
-			TimeInSeconds:        epoch_20250823_120000_edt,
-			MaximumTransfers:     4,
-			AllowTransferHopping: false,
+			TimeInSeconds:           epoch_20250823_120000_edt,
+			MaximumTransfers:        4,
+			AllowTransferHopping:    false,
+			StopTimeCutOffTimestamp: epoch_20250822_120000_edt,
 		},
 	)
 
