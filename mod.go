@@ -20,7 +20,7 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 	/** create a map of transfers from stop IDs for easy lookup */
 	transfers_by_unique_stop_id := map[ID][]int{}
 	if input.TransfersByUniqueStopId != nil {
-		transfers_by_unique_stop_id = input.TransfersByUniqueStopId
+		transfers_by_unique_stop_id = *input.TransfersByUniqueStopId
 	} else {
 		for index, transfer := range input.Transfers {
 			if _, has_key := transfers_by_unique_stop_id[transfer.GetFromUniqueStopID()]; !has_key {
@@ -30,18 +30,34 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 		}
 	}
 
+	/* get time partition interval */
+	partition_interval := input.TimePartitionInterval
+	if partition_interval == 0 {
+		/* partition by day */
+		partition_interval = 86400
+	}
+
 	/** create a map of stop times by stop id and by trip id for easy lookup */
 	has_prepared_stop_times_by_unique_stop_id := input.StopTimesByUniqueStopId != nil
 	has_prepared_stop_times_by_unique_trip_service_id := input.StopTimesByUniqueTripServiceId != nil
+	has_prepared_stop_time_partitions := input.TimePartitions != nil
+	time_partitions := StopTimePartitions[ID]{
+		Partitions:                      map[TimestampInSeconds]int{},
+		PartitionsByUniqueStopID:        map[ID]map[TimestampInSeconds]int{},
+		PartitionsByUniqueTripServiveID: map[ID]map[TimestampInSeconds]int{},
+	}
 	stop_times_by_unique_stop_id := map[ID][]int{}
 	stop_times_by_unique_trip_service_id := map[ID][]int{}
 	if has_prepared_stop_times_by_unique_stop_id {
-		stop_times_by_unique_stop_id = input.StopTimesByUniqueStopId
+		stop_times_by_unique_stop_id = *input.StopTimesByUniqueStopId
 	}
 	if has_prepared_stop_times_by_unique_trip_service_id {
-		stop_times_by_unique_trip_service_id = input.StopTimesByUniqueTripServiceId
+		stop_times_by_unique_trip_service_id = *input.StopTimesByUniqueTripServiceId
 	}
-	if !has_prepared_stop_times_by_unique_stop_id || !has_prepared_stop_times_by_unique_trip_service_id {
+	if has_prepared_stop_time_partitions {
+		time_partitions = *input.TimePartitions
+	}
+	if !has_prepared_stop_times_by_unique_stop_id || !has_prepared_stop_times_by_unique_trip_service_id || !has_prepared_stop_time_partitions {
 		for index, stop_time := range input.StopTimes {
 			if !has_prepared_stop_times_by_unique_stop_id {
 				if _, has_key := stop_times_by_unique_stop_id[stop_time.GetUniqueStopID()]; !has_key {
@@ -56,6 +72,26 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 				}
 				stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()] = append(stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()], index)
 			}
+
+			if !has_prepared_stop_time_partitions {
+				arrival_time_secs := stop_time.GetArrivalTimeInSeconds()
+				current_partition := GetTimePartition(arrival_time_secs, partition_interval, false)
+				if _, has_partition := time_partitions.Partitions[current_partition]; !has_partition {
+					time_partitions.Partitions[current_partition] = index
+				}
+				if _, has_stop_map := time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()]; !has_stop_map {
+					time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()] = map[TimestampInSeconds]int{}
+				}
+				if _, has_partition := time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()][current_partition]; !has_partition {
+					time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()][current_partition] = len(stop_times_by_unique_stop_id[stop_time.GetUniqueStopID()]) - 1
+				}
+				if _, has_trip_map := time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()]; !has_trip_map {
+					time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()] = map[TimestampInSeconds]int{}
+				}
+				if _, has_partition := time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()][current_partition]; !has_partition {
+					time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()][current_partition] = len(stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()]) - 1
+				}
+			}
 		}
 	}
 
@@ -66,6 +102,8 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 		TransfersByUniqueStopId:        transfers_by_unique_stop_id,
 		StopTimesByUniqueStopId:        stop_times_by_unique_stop_id,
 		StopTimesByUniqueTripServiceId: stop_times_by_unique_trip_service_id,
+		TimePartitionInterval:          partition_interval,
+		TimePartitions:                 time_partitions,
 	}
 }
 
@@ -119,8 +157,20 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 			/* this should always exist because any marked stop should have been added to the segment list */
 			current_segment_for_stop := earliest_arrival_time_segments_by_unique_stop_id[marked_stop.ID]
 			stop_times_for_marked_stop := prepared_input.StopTimesByUniqueStopId[marked_stop.ID]
-			/* we will go through the stop times and find the departures we can make based on our current earliest arrival time at the  "marked_stop" */
-			stop_times_for_marked_stop_it := NewSliceIterator(stop_times_for_marked_stop, false)
+			/*
+			 * we will go through the stop times and find the departures we can make based on our current earliest arrival time at the  "marked_stop"
+			 * we can skip any stop time which departs before the current segment's arrival time using the timepartition
+			 */
+			current_segment_for_stop_arrival_time_partition := GetTimePartition(current_segment_for_stop.ArrivalTimeInSeconds, prepared_input.TimePartitionInterval, false)
+			partition_end_index := len(stop_times_for_marked_stop)
+			if prepared_input.Input.StopTimeCutOffTimestamp != 0 {
+				upper_partition_index, has_upper_partition_index := prepared_input.TimePartitions.PartitionsByUniqueStopID[marked_stop.ID][GetTimePartition(prepared_input.Input.StopTimeCutOffTimestamp, prepared_input.TimePartitionInterval, true)]
+				if has_upper_partition_index {
+					partition_end_index = upper_partition_index
+				}
+			}
+
+			stop_times_for_marked_stop_it := NewSliceIterator(stop_times_for_marked_stop[prepared_input.TimePartitions.PartitionsByUniqueStopID[marked_stop.ID][current_segment_for_stop_arrival_time_partition]:partition_end_index], false)
 			for stop_times_for_marked_stop_it.HasNext() {
 				stop_time_for_marked_stop := prepared_input.Input.StopTimes[stop_times_for_marked_stop_it.Next()]
 				trip_already_scanned_from_sequence, has_already_scanned_trip_from_sequence := trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripID()]
@@ -309,7 +359,15 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 				we will go through the stop times and find the latest arrivals which are still before my expected can make based on our current earliest arrival time at the  "marked_stop"
 				in the arrive by implementation we will iterate in reverse
 			*/
-			stop_times_for_marked_stop_it := NewSliceIterator(stop_times_for_marked_stop, true)
+			current_segment_for_stop_arrival_time_partition := GetTimePartition(current_segment_for_stop.ArrivalTimeInSeconds, prepared_input.TimePartitionInterval, false)
+			partition_end_index := len(stop_times_for_marked_stop)
+			if prepared_input.Input.StopTimeCutOffTimestamp != 0 {
+				upper_partition_index, has_upper_partition_index := prepared_input.TimePartitions.PartitionsByUniqueStopID[marked_stop.ID][GetTimePartition(prepared_input.Input.StopTimeCutOffTimestamp, prepared_input.TimePartitionInterval, true)]
+				if has_upper_partition_index {
+					partition_end_index = upper_partition_index
+				}
+			}
+			stop_times_for_marked_stop_it := NewSliceIterator(stop_times_for_marked_stop[prepared_input.TimePartitions.PartitionsByUniqueStopID[marked_stop.ID][current_segment_for_stop_arrival_time_partition]:partition_end_index], true)
 			for stop_times_for_marked_stop_it.HasNext() {
 				stop_time_for_marked_stop := prepared_input.Input.StopTimes[stop_times_for_marked_stop_it.Next()]
 				trip_already_scanned_from_sequence, has_already_scanned_trip_from_sequence := trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripID()]

@@ -144,6 +144,12 @@ type Journey[ID UniqueGtfsIdLike] struct {
 	Legs                   []RoundSegmentSpan[ID]
 }
 
+type StopTimePartitions[ID UniqueGtfsIdLike] struct {
+	Partitions                      map[TimestampInSeconds]int
+	PartitionsByUniqueStopID        map[ID]map[TimestampInSeconds]int
+	PartitionsByUniqueTripServiveID map[ID]map[TimestampInSeconds]int
+}
+
 type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
 	FromStops []StopType
 	ToStops   []StopType
@@ -155,11 +161,17 @@ type SimpleRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType 
 	MaximumTransfers int
 	/* determines whether to allow walk-transferring more than once */
 	AllowTransferHopping bool
+	/** determines the cut off time for any stop time lookup */
+	StopTimeCutOffTimestamp TimestampInSeconds
+
+	/* determines how to group times - defaults to 86400 seconds / per day */
+	TimePartitionInterval TimestampInSeconds
 
 	/** these can be passed if they are pre-calculated in memory before running raptor; useful for speeding up the actual raptor - uints refer to their list indexes from the input */
-	TransfersByUniqueStopId        map[ID][]int
-	StopTimesByUniqueStopId        map[ID][]int
-	StopTimesByUniqueTripServiceId map[ID][]int
+	TransfersByUniqueStopId        *map[ID][]int
+	StopTimesByUniqueStopId        *map[ID][]int
+	StopTimesByUniqueTripServiceId *map[ID][]int
+	TimePartitions                 *StopTimePartitions[ID]
 }
 
 type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType GtfsTransfer[ID], StopTimeType GtfsStopTime[ID]] struct {
@@ -170,6 +182,9 @@ type PreparedRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTyp
 	TransfersByUniqueStopId        map[ID][]int
 	StopTimesByUniqueStopId        map[ID][]int
 	StopTimesByUniqueTripServiceId map[ID][]int
+
+	TimePartitionInterval TimestampInSeconds
+	TimePartitions        StopTimePartitions[ID]
 }
 
 type RaptorMarkedStop[ID UniqueGtfsIdLike] struct {
