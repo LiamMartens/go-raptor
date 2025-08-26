@@ -157,6 +157,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 	/* now we can start the rounds up until N transfers */
 	trips_scanned_from_sequence := map[ID]int{}
 	for range input.MaximumTransfers {
+		had_improvements_this_round := false
 		/* this will be the set of next stops to check for the next round */
 		stops_marked_for_next_round := map[ID]RaptorMarkedStop[ID]{}
 		/* in each round we will check all marked stops for the trips we could take - we will do this by going through the stop times */
@@ -219,6 +220,9 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					is_improvement_to_existing_arrival_time := !has_existing_segment || existing_segment.ArrivalTimeInSeconds > following_stop_time.GetArrivalTimeInSeconds()
 					/* if this stop was not arrived at yet OR if this arrival is before the recorded arrival */
 					if is_improvement_to_existing_arrival_time {
+						/* mark improvement this round */
+						had_improvements_this_round = true
+
 						updated_spans := make([]RoundSegmentSpan[ID], len(current_segment_for_stop.Spans)+1)
 						/* copy current segment spans + add a new span for how to get to this stop */
 						copy(updated_spans, current_segment_for_stop.Spans)
@@ -314,6 +318,10 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 		}
 		/* replace stops marked map */
 		stops_marked_for_round = stops_marked_for_next_round
+		/* if no improvements were found this round we can stop */
+		if !had_improvements_this_round {
+			break
+		}
 	}
 
 	return potential_journeys_found
@@ -355,6 +363,8 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 	/* now we can start the rounds up until N transfers */
 	trips_scanned_from_sequence := map[ID]int{}
 	for range input.MaximumTransfers {
+		/* keep track of whether any improvements were found this round */
+		had_improvements_this_round := false
 		/* this will be the set of next stops to check for the next round */
 		stops_marked_for_next_round := map[ID]RaptorMarkedStop[ID]{}
 		/* in each round we will check all marked stops for the trips we could take - we will do this by going through the stop times in  reverse */
@@ -413,6 +423,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					is_improvement_to_existing_arrival_time := !has_existing_segment || preceeding_stop_time.GetArrivalTimeInSeconds() > existing_segment.ArrivalTimeInSeconds
 					/* if this stop was not arrived at yet OR if this arrival is after the recorded arrival */
 					if is_improvement_to_existing_arrival_time {
+						had_improvements_this_round = true
 						/* we'll want to update the segment spans of the current marked stop NOT the preceeding stop since we don't know yet how we can arrive at the preceeding */
 						/* however we do now now how we could arrive at the current marked stop which is through this stop time */
 						updated_spans := append([]RoundSegmentSpan[ID]{
@@ -508,6 +519,10 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 		}
 		/* replace stops marked map */
 		stops_marked_for_round = stops_marked_for_next_round
+		/* if no improvements were found this round we can stop */
+		if !had_improvements_this_round {
+			break
+		}
 	}
 
 	return potential_journeys_found
