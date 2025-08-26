@@ -82,14 +82,14 @@ func PrepareRaptorInput[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferType
 				if _, has_stop_map := time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()]; !has_stop_map {
 					time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()] = map[TimestampInSeconds]int{}
 				}
-				if _, has_partition := time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()]; !has_partition {
-					time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()][current_partition] = index
+				if _, has_partition := time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()][current_partition]; !has_partition {
+					time_partitions.PartitionsByUniqueStopID[stop_time.GetUniqueStopID()][current_partition] = len(stop_times_by_unique_stop_id[stop_time.GetUniqueStopID()]) - 1
 				}
 				if _, has_trip_map := time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()]; !has_trip_map {
 					time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()] = map[TimestampInSeconds]int{}
 				}
-				if _, has_partition := time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()]; !has_partition {
-					time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()][current_partition] = index
+				if _, has_partition := time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()][current_partition]; !has_partition {
+					time_partitions.PartitionsByUniqueTripServiveID[stop_time.GetUniqueTripServiceID()][current_partition] = len(stop_times_by_unique_trip_service_id[stop_time.GetUniqueTripServiceID()]) - 1
 				}
 			}
 		}
@@ -169,6 +169,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					partition_end_index = upper_partition_index
 				}
 			}
+
 			stop_times_for_marked_stop_it := NewSliceIterator(stop_times_for_marked_stop[prepared_input.TimePartitions.PartitionsByUniqueStopID[marked_stop.ID][current_segment_for_stop_arrival_time_partition]:partition_end_index], false)
 			for stop_times_for_marked_stop_it.HasNext() {
 				stop_time_for_marked_stop := prepared_input.Input.StopTimes[stop_times_for_marked_stop_it.Next()]
