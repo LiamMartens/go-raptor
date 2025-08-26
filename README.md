@@ -1,0 +1,2 @@
+# Go Raptor
+This is a Go implementation of the [RAPTOR](https://www.microsoft.com/en-us/research/wp-content/uploads/2012/01/raptor_alenex.pdf) algorithm. It is fairly optimized without sacrificing too much readability. Based on local testing on a Macbook Pro M4 with the NYC dataset and an in memory stop-time dataset of 26 million entries paritioned by day this can run in <1s for a multi origin / multi destination query.
