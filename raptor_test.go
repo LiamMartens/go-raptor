@@ -3,6 +3,9 @@ package go_raptor
 import (
 	"fmt"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func FormatSecondsSinceMidnight(secs int64) string {
@@ -92,6 +95,78 @@ func TestSimpleReverseRaptor(t *testing.T) {
 	if journeys[0].DepartureTimeInSeconds != epoch_20250823_120000_edt+10 {
 		t.Fatalf(`expected raptor to find departure time %v but got %v`, epoch_20250823_120000_edt+10, journeys[0].DepartureTimeInSeconds)
 	}
+}
+
+func TestSimpleForwardRaptor2(t *testing.T) {
+	now := time.Now()
+	journeys := SimpleRaptor(
+		SimpleRaptorInput[string, GtfsStopStruct[string], GtfsTransferStruct[string], GtfsStopTimeStruct[string]]{
+			FromStops: []GtfsStopStruct[string]{
+				{UniqueID: "Franklin Ave"},
+			},
+			ToStops: []GtfsStopStruct[string]{
+				{UniqueID: "Jay Street"},
+			},
+			Transfers: []GtfsTransferStruct[string]{},
+			StopTimes: []GtfsStopTimeStruct[string]{
+				{
+					UniqueStopID:           "Franklin Ave",
+					UniqueTripID:           "C_NORTH",
+					UniqueTripServiceID:    "C_NORTH",
+					StopSequence:           5,
+					ArrivalTimeInSeconds:   now.Add(10 * time.Second).Unix(),
+					DepartureTimeInSeconds: now.Add(15 * time.Second).Unix(),
+				},
+				{
+					UniqueStopID:           "Jay Street",
+					UniqueTripID:           "C_NORTH",
+					UniqueTripServiceID:    "C_NORTH",
+					StopSequence:           6,
+					ArrivalTimeInSeconds:   now.Add(60 * time.Second).Unix(),
+					DepartureTimeInSeconds: now.Add(65 * time.Second).Unix(),
+				},
+
+				{
+					UniqueStopID:           "Franklin Ave",
+					UniqueTripID:           "C_SOUTH",
+					UniqueTripServiceID:    "C_SOUTH",
+					StopSequence:           5,
+					ArrivalTimeInSeconds:   now.Add(15 * time.Second).Unix(),
+					DepartureTimeInSeconds: now.Add(20 * time.Second).Unix(),
+				},
+				{
+					UniqueStopID:           "Nostrand",
+					UniqueTripID:           "C_SOUTH",
+					UniqueTripServiceID:    "C_SOUTH",
+					StopSequence:           6,
+					ArrivalTimeInSeconds:   now.Add(30 * time.Second).Unix(),
+					DepartureTimeInSeconds: now.Add(35 * time.Second).Unix(),
+				},
+				{
+					UniqueStopID:           "Nostrand",
+					UniqueTripID:           "A_NORTH",
+					UniqueTripServiceID:    "A_NORTH",
+					StopSequence:           6,
+					ArrivalTimeInSeconds:   now.Add(40 * time.Second).Unix(),
+					DepartureTimeInSeconds: now.Add(45 * time.Second).Unix(),
+				},
+				{
+					UniqueStopID:           "Jay Street",
+					UniqueTripID:           "A_NORTH",
+					UniqueTripServiceID:    "A_NORTH",
+					StopSequence:           7,
+					ArrivalTimeInSeconds:   now.Add(55 * time.Second).Unix(),
+					DepartureTimeInSeconds: now.Add(60 * time.Second).Unix(),
+				},
+			},
+			Mode:                 RaptorModeDepartAt,
+			TimeInSeconds:        now.Unix(),
+			MaximumTransfers:     4,
+			AllowTransferHopping: false,
+		},
+	)
+
+	assert.Len(t, journeys, 2, "should return both journey options")
 }
 
 func TestSimpleForwardRaptor_MultiTrip(t *testing.T) {

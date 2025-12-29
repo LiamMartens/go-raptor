@@ -166,7 +166,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 			current_segment_for_stop := earliest_arrival_time_segments_by_unique_stop_id[marked_stop.ID]
 			stop_times_for_marked_stop := prepared_input.StopTimesByUniqueStopId[marked_stop.ID]
 			/*
-			 * we will go through the stop times and find the departures we can make based on our current earliest arrival time at the  "marked_stop"
+			 * we will go through the stop times and find the departures we can make based on our current earliest arrival time at the "marked_stop"
 			 * we can skip any stop time which departs before the current segment's arrival time using the timepartition
 			 */
 			current_segment_for_stop_arrival_time_partition := GetTimePartition(current_segment_for_stop.ArrivalTimeInSeconds, prepared_input.TimePartitionInterval, false)
@@ -181,7 +181,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 			stop_times_for_marked_stop_it := NewSliceIterator(stop_times_for_marked_stop[prepared_input.TimePartitions.PartitionsByUniqueStopID[marked_stop.ID][current_segment_for_stop_arrival_time_partition]:partition_end_index], false)
 			for stop_times_for_marked_stop_it.HasNext() {
 				stop_time_for_marked_stop := prepared_input.Input.StopTimes[stop_times_for_marked_stop_it.Next()]
-				trip_already_scanned_from_sequence, has_already_scanned_trip_from_sequence := trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripID()]
+				trip_already_scanned_from_sequence, has_already_scanned_trip_from_sequence := trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripServiceID()]
 				/* skip scanning if trip was already forward scanned past or from this sequence */
 				if stop_time_for_marked_stop.GetDepartureTimeInSeconds() < current_segment_for_stop.ArrivalTimeInSeconds ||
 					has_already_scanned_trip_from_sequence && stop_time_for_marked_stop.GetStopSequence() >= trip_already_scanned_from_sequence {
@@ -189,8 +189,9 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					continue
 				}
 
-				/* mark trip as scanned from sequence */
-				trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripID()] = stop_time_for_marked_stop.GetStopSequence()
+				// /* mark trip as scanned from sequence */
+				// there's a bug where they may not be scanned because when arriving at a destination stop
+				trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripServiceID()] = stop_time_for_marked_stop.GetStopSequence()
 
 				/*
 				 * if we CAN make it we will want to look up the stop times after the current one in the trip.
@@ -218,6 +219,7 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 					following_stop_time := prepared_input.Input.StopTimes[stop_times_for_unique_trip_id_after_current_stop_it.Next()]
 					existing_segment, has_existing_segment := earliest_arrival_time_segments_by_unique_stop_id[following_stop_time.GetUniqueStopID()]
 					is_improvement_to_existing_arrival_time := !has_existing_segment || existing_segment.ArrivalTimeInSeconds > following_stop_time.GetArrivalTimeInSeconds()
+
 					/* if this stop was not arrived at yet OR if this arrival is before the recorded arrival */
 					if is_improvement_to_existing_arrival_time {
 						/* mark improvement this round */
@@ -282,14 +284,19 @@ func SimpleRaptorDepartAt[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 							}
 						}
 					}
-					/* next we can mark this stop to check in the next round AND add any potential transfers from this stop to mark */
-					stops_marked_for_next_round[following_stop_time.GetUniqueStopID()] = RaptorMarkedStop[ID]{
-						ID:     following_stop_time.GetUniqueStopID(),
-						Source: RaptorMarkedStopSourceArrival,
-					}
 
-					/* lastly we can check if this stop is actually one of our destination stops - in which case the segment is corresponding to a complete journe7 */
-					if _, is_destination_stop := prepared_input.ToStopsByUniqueStopId[following_stop_time.GetUniqueStopID()]; is_destination_stop {
+					_, is_destination_stop := prepared_input.ToStopsByUniqueStopId[following_stop_time.GetUniqueStopID()]
+					if !is_destination_stop {
+						/*
+							next we can mark this stop to check in the next round AND add any potential transfers from this stop to mark;
+							but only if we haven't already arrived in which we early break
+						*/
+						stops_marked_for_next_round[following_stop_time.GetUniqueStopID()] = RaptorMarkedStop[ID]{
+							ID:     following_stop_time.GetUniqueStopID(),
+							Source: RaptorMarkedStopSourceArrival,
+						}
+					} else if is_destination_stop {
+						/* lastly we can check if this stop is actually one of our destination stops - in which case the segment is corresponding to a complete journe7 */
 						segment := earliest_arrival_time_segments_by_unique_stop_id[following_stop_time.GetUniqueStopID()]
 						segment_fingerprint := segment.GetFingerPrint()
 						if _, has_same_trip := potential_journey_fingerprints[segment_fingerprint]; !has_same_trip && len(segment.Spans) > 0 && segment.Spans[0].ViaTrip != nil && segment.Spans[len(segment.Spans)-1].ViaTrip != nil {
@@ -387,7 +394,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 			stop_times_for_marked_stop_it := NewSliceIterator(stop_times_for_marked_stop[prepared_input.TimePartitions.PartitionsByUniqueStopID[marked_stop.ID][current_segment_for_stop_arrival_time_partition]:partition_end_index], true)
 			for stop_times_for_marked_stop_it.HasNext() {
 				stop_time_for_marked_stop := prepared_input.Input.StopTimes[stop_times_for_marked_stop_it.Next()]
-				trip_already_scanned_from_sequence, has_already_scanned_trip_from_sequence := trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripID()]
+				trip_already_scanned_from_sequence, has_already_scanned_trip_from_sequence := trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripServiceID()]
 				/* we don't want to scan the preceeding stops if they were already scanned before -> unless this stop sequence is after the already scanned sequence in which case we are missing a few */
 				if stop_time_for_marked_stop.GetArrivalTimeInSeconds() > current_segment_for_stop.ArrivalTimeInSeconds ||
 					has_already_scanned_trip_from_sequence && stop_time_for_marked_stop.GetStopSequence() <= trip_already_scanned_from_sequence {
@@ -396,7 +403,7 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 				}
 
 				/* mark trip as scanned from sequence */
-				trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripID()] = stop_time_for_marked_stop.GetStopSequence()
+				trips_scanned_from_sequence[stop_time_for_marked_stop.GetUniqueTripServiceID()] = stop_time_for_marked_stop.GetStopSequence()
 
 				/*
 				 * if we CAN make it we will want to look up the stop times before the current one in the trip.
@@ -483,14 +490,19 @@ func SimpleRaptorArriveBy[ID UniqueGtfsIdLike, StopType GtfsStop[ID], TransferTy
 							}
 						}
 					}
-					/* next we can mark this stop to check in the next round AND add any potential transfers from this stop to mark */
-					stops_marked_for_next_round[preceeding_stop_time.GetUniqueStopID()] = RaptorMarkedStop[ID]{
-						ID:     preceeding_stop_time.GetUniqueStopID(),
-						Source: RaptorMarkedStopSourceArrival,
-					}
 
-					/* lastly we can check if this stop is actually one of our origin stops - in which case the segment is corresponding to a complete journe7 */
-					if _, is_origin_stop := prepared_input.FromStopsByUniqueStopId[preceeding_stop_time.GetUniqueStopID()]; is_origin_stop {
+					_, is_origin_stop := prepared_input.FromStopsByUniqueStopId[preceeding_stop_time.GetUniqueStopID()]
+					if !is_origin_stop {
+						/*
+							next we can mark this stop to check in the next round AND add any potential transfers from this stop to mark;
+							but only if we haven't already arrived in which we early break
+						*/
+						stops_marked_for_next_round[preceeding_stop_time.GetUniqueStopID()] = RaptorMarkedStop[ID]{
+							ID:     preceeding_stop_time.GetUniqueStopID(),
+							Source: RaptorMarkedStopSourceArrival,
+						}
+					} else if is_origin_stop {
+						/* lastly we can check if this stop is actually one of our origin stops - in which case the segment is corresponding to a complete journe7 */
 						segment := latest_arrival_time_segments_by_unique_stop_id[preceeding_stop_time.GetUniqueStopID()]
 						segment_fingerprint := segment.GetFingerPrint()
 						if _, has_same_trip := potential_journey_fingerprints[segment_fingerprint]; !has_same_trip && len(segment.Spans) > 0 && segment.Spans[0].ViaTrip != nil && segment.Spans[len(segment.Spans)-1].ViaTrip != nil {
